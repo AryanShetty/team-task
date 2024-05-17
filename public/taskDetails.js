@@ -12,6 +12,7 @@ async function initializePage() {
         await fetchUserDetails();
         const task = await fetchTaskDetails();
         if (task) {
+            await fetchRoomDetails(task);
             initializeDropdowns(task);
             displayTaskDetails(task);
         }
@@ -32,6 +33,21 @@ async function fetchTaskDetails() {
     } catch (error) {
         console.error('Error fetching task details:', error);
         return null;
+    }
+}
+
+async function fetchRoomDetails(task) {
+    if (task.area_details) {
+        try {
+            const response = await fetch(`/rooms/${task.area_details}`);
+            const room = await response.json();
+            task.room_name = room.name;
+        } catch (error) {
+            console.error('Error fetching room details:', error);
+            task.room_name = "Unknown Room";
+        }
+    } else {
+        task.room_name = "No Room Assigned";
     }
 }
 
@@ -169,7 +185,7 @@ function displayTaskDetails(task) {
             <input type="text" id="taskDescriptionEdit" value="${task.task_name || ''}" style="display: none;">
             <p><strong>Area Selection:</strong> ${task.area}</p>
             <select id="areaSelectionEdit" style="display: none;" onchange="populateRoomDropdown(this.value)"></select>
-            <p><strong>Room Selection:</strong> ${task.area_details}</p>
+            <p><strong>Room Selection:</strong> ${task.room_name}</p>
             <select id="roomSelectionEdit" style="display: none;"></select>
             <p><strong>Assigned To:</strong> ${task.assigned_to}</p>
             <select id="assignedToEdit" style="display: none;"></select>

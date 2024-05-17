@@ -444,3 +444,23 @@ async function fetchTasksFromDatabase() {
     }
 }
 
+app.get('/rooms/:roomId', async (req, res) => {
+  const roomId = req.params.roomId;
+
+  try {
+    const client = await pool.connect();
+    const query = 'SELECT * FROM rooms WHERE id = $1';
+    const result = await client.query(query, [roomId]);
+    client.release();
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Room not found' });
+    }
+
+    const room = result.rows[0];
+    res.json(room);
+  } catch (error) {
+    console.error('Error fetching room details:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
