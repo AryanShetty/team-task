@@ -243,6 +243,22 @@ async function displayUnassignedTasks() {
     }
 }
 
+async function displayAssignedUnacceptedTasks() {
+    try {
+        const response = await fetch('/fetchTasks/assignedUnaccepted');
+        const assignedUnacceptedTasks = await response.json();
+        const assignedUnacceptedTasksContainer = document.getElementById('assignedUnacceptedTasksContainer');
+        assignedUnacceptedTasksContainer.innerHTML = '';
+
+        assignedUnacceptedTasks.forEach(task => {
+            const taskElement = createTaskElement(task);
+            assignedUnacceptedTasksContainer.appendChild(taskElement);
+        });
+    } catch (error) {
+        console.error('Error fetching and displaying assigned but unaccepted tasks:', error);
+    }
+}
+
 // Helper function to create a task element
 function createTaskElement(task) {
     const taskElement = document.createElement('div');
@@ -425,12 +441,12 @@ function displayMessage(message) {
 // Call the functions to display tasks when the page loads
 async function fetchAndDisplayTasks() {
     try {
-        console.log("Fetching and displaying tasks...");
         await displayRejectedTasks();
         await displayAcceptedTasks();
         await displayCompletedTasks();
         await displayVerifiedTasks();
         await displayUnassignedTasks();
+        await displayAssignedUnacceptedTasks();
     } catch (error) {
         console.error('Error fetching and displaying tasks:', error);
     }

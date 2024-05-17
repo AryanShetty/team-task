@@ -428,6 +428,25 @@ app.get('/fetchTasks/unassigned', async (req, res) => {
   }
 });
 
+app.get('/fetchTasks/assignedUnaccepted', async (req, res) => {
+  try {
+    const query = `
+      SELECT * FROM tasks
+      WHERE assigned_to IS NOT NULL
+        AND (accepted IS NULL OR accepted = false)
+        AND (rejected IS NULL OR rejected = false)
+        AND (completed IS NULL OR completed = false)
+        AND (verified_by IS NULL)
+    `;
+    const result = await pool.query(query);
+    const assignedUnacceptedTasks = result.rows;
+    res.json(assignedUnacceptedTasks);
+  } catch (error) {
+    console.error('Error fetching assigned but unaccepted tasks:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 let tasks = [];
 
 // Function to fetch tasks from the database and populate the tasks array
