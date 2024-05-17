@@ -13,8 +13,10 @@
       <button onclick="login()">Login</button>
     </div>
     <div id="taskManager" style="display: none">
-      <h1>Team Task</h1>
-      <button onclick="logout()">Logout</button>
+      <div id="headerContainer">
+        <h1>Team Task</h1>
+        <button id="logoutButton" onclick="logout()">Logout</button>
+      </div>
       <div id="taskForm">
         <input
           type="text"
@@ -50,28 +52,23 @@
       </div>
       <div>
         <h2>Completed Tasks</h2>
-        <div id="completedTasksContainer">          
+        <div id="completedTasksContainer">
           <!-- Completed tasks will be displayed here -->
         </div>
       </div>
-
       <div>
         <h2>Verified Tasks</h2>
-        <div id="verifiedTasksContainer">          
+        <div id="verifiedTasksContainer">
           <!-- Verified tasks will be displayed here -->
         </div>
       </div>
-
       <div>
         <h2>Unassigned Tasks</h2>
-        <div id="unassignedTasksContainer">          
+        <div id="unassignedTasksContainer">
           <!-- Unassigned tasks will be displayed here -->
         </div>
       </div>
     </div>
-
     <script src="app.js"></script>
-    
-    </script>
   </body>
 </html>
