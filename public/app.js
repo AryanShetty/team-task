@@ -258,6 +258,45 @@ async function displayAssignedUnacceptedTasks() {
         console.error('Error fetching and displaying assigned but unaccepted tasks:', error);
     }
 }
+// Function to create accept button
+function createAcceptButton(taskId) {
+    const acceptButton = document.createElement('button');
+    acceptButton.textContent = 'Accept Task';
+    acceptButton.classList.add('accept-button'); // Add class to accept button
+    acceptButton.addEventListener('click', async () => {
+        try {
+            const response = await fetch(`/tasks/${taskId}/accept`, { method: 'POST' });
+            if (response.ok) {
+                fetchAndDisplayTasks();
+            } else {
+                alert('Failed to accept task. Please try again later.');
+            }
+        } catch (error) {
+            console.error('Error accepting task:', error);
+        }
+    });
+    return acceptButton;
+}
+
+// Function to create reject button
+function createRejectButton(taskId) {
+    const rejectButton = document.createElement('button');
+    rejectButton.textContent = 'Reject Task';
+    rejectButton.classList.add('reject-button'); // Add class to reject button
+    rejectButton.addEventListener('click', async () => {
+        try {
+            const response = await fetch(`/tasks/${taskId}/reject`, { method: 'POST' });
+            if (response.ok) {
+                fetchAndDisplayTasks();
+            } else {
+                alert('Failed to reject task. Please try again later.');
+            }
+        } catch (error) {
+            console.error('Error rejecting task:', error);
+        }
+    });
+    return rejectButton;
+}
 
 // Helper function to create a task element
 function createTaskElement(task) {
@@ -296,6 +335,14 @@ function createTaskElement(task) {
         console.error('Error fetching user details:', error);
         assignedTo.textContent = 'Assigned To: N/A';
     });
+    // Conditionally render accept and reject buttons
+    if (!task.accepted && !task.rejected) {
+        const buttonContainer = document.createElement('div');
+        buttonContainer.id = `task-${task.id}-buttons`;
+        buttonContainer.appendChild(createAcceptButton(task.id));
+        buttonContainer.appendChild(createRejectButton(task.id));
+        taskElement.appendChild(buttonContainer);
+    }
 
     return taskElement;
 }
@@ -368,6 +415,12 @@ async function populateAssignedToDropdown() {
             const option = document.createElement('option');
             option.value = user.id;
             option.textContent = user.username;
+
+            // Set 'Unassigned' as the default selected option
+            if (user.username === 'Unassigned') {
+                option.selected = true;
+            }
+
             assignedToDropdown.appendChild(option);
         });
     } catch (error) {

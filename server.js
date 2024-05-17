@@ -496,6 +496,9 @@ app.get('/users/:userId', async (req, res) => {
       const query = 'SELECT user_id, username FROM users WHERE user_id = $1';
       const result = await client.query(query, [userId]);
       client.release();
+      if (result.rows.length === 0) {
+          return res.status(404).json({ error: 'User not found' });
+      }
       const user = result.rows[0];
       res.json(user);
   } catch (error) {
