@@ -277,12 +277,25 @@ function createTaskElement(task) {
     taskElement.appendChild(area);
 
     const room = document.createElement('div');
-    room.textContent = 'Room: ' + task.area_details;
     taskElement.appendChild(room);
 
     const assignedTo = document.createElement('div');
-    assignedTo.textContent = 'Assigned To: ' + task.assigned_to;
     taskElement.appendChild(assignedTo);
+
+    // Fetch room name and user name asynchronously
+    fetchRoomName(task.area_details).then(roomName => {
+        room.textContent = 'Room: ' + roomName;
+    }).catch(error => {
+        console.error('Error fetching room details:', error);
+        room.textContent = 'Room: N/A';
+    });
+
+    fetchUserName(task.assigned_to).then(userName => {
+        assignedTo.textContent = 'Assigned To: ' + userName;
+    }).catch(error => {
+        console.error('Error fetching user details:', error);
+        assignedTo.textContent = 'Assigned To: N/A';
+    });
 
     return taskElement;
 }
@@ -449,5 +462,44 @@ async function fetchAndDisplayTasks() {
         await displayAssignedUnacceptedTasks();
     } catch (error) {
         console.error('Error fetching and displaying tasks:', error);
+    }
+}
+
+
+// Function to fetch the room name using the room ID
+async function fetchRoomName(roomId) {
+    if (!roomId) return 'N/A'; // Handle cases where roomId is null or undefined
+    
+    try {
+        const response = await fetch(`/rooms/${roomId}`);
+        const room = await response.json();
+
+        if (response.ok) {
+            return room.name || 'N/A'; // Return the room name or 'N/A' if not found
+        } else {
+            console.error('Error fetching room details:', room.error);
+            return 'N/A';
+        }
+    } catch (error) {
+        console.error('Error fetching room details:', error);
+        return 'N/A';
+    }
+}
+
+// Function to fetch the user name using the user ID
+async function fetchUserName(userId) {
+    if (!userId) return 'N/A'; // Handle cases where userId is null or undefined
+    try {
+        const response = await fetch(`/users/${userId}`);
+        const user = await response.json();
+        if (response.ok) {
+            return user.username || 'N/A'; // Return the username or 'N/A' if not found
+        } else {
+            console.error('Error fetching user details:', user.error);
+            return 'N/A';
+        }
+    } catch (error) {
+        console.error('Error fetching user details:', error);
+        return 'N/A';
     }
 }

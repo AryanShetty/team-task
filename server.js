@@ -464,22 +464,43 @@ async function fetchTasksFromDatabase() {
 }
 
 app.get('/rooms/:roomId', async (req, res) => {
-  const roomId = req.params.roomId;
+  const roomId = parseInt(req.params.roomId, 10);
+  
+  if (isNaN(roomId)) {
+      return res.status(400).json({ error: 'Invalid room ID' });
+  }
 
   try {
-    const client = await pool.connect();
-    const query = 'SELECT * FROM rooms WHERE id = $1';
-    const result = await client.query(query, [roomId]);
-    client.release();
+      const client = await pool.connect();
+      const query = 'SELECT name FROM rooms WHERE id = $1;';
+      const result = await client.query(query, [roomId]);
+      client.release();
 
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Room not found' });
-    }
+      if (result.rows.length === 0) {
+          return res.status(404).json({ error: 'Room not found' });
+      }
 
-    const room = result.rows[0];
-    res.json(room);
+      const room = result.rows[0];
+      res.json(room);
   } catch (error) {
-    console.error('Error fetching room details:', error);
-    res.status(500).json({ error: 'Internal server error' });
+      console.error('Error fetching room details:', error);
+      res.status(500).json({ error: 'Internal server error' });
   }
 });
+
+
+app.get('/users/:userId', async (req, res) => {
+  const userId = req.params.userId;
+  try {
+      const client = await pool.connect();
+      const query = 'SELECT user_id, username FROM users WHERE user_id = $1';
+      const result = await client.query(query, [userId]);
+      client.release();
+      const user = result.rows[0];
+      res.json(user);
+  } catch (error) {
+      console.error('Error fetching user:', error);
+      res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
