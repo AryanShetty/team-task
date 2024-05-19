@@ -20,7 +20,7 @@ function login() {
             userInfo.id = data.user_id;
             userInfo.username = data.username;
             userInfo.role = data.role;
-
+  
             // Send user details to /user-details endpoint
             fetch('/user-details', {
                 method: 'POST',
@@ -35,32 +35,27 @@ function login() {
             .then(data => {
                 if (data.success) {
                     console.log('User details sent to /user-details endpoint');
+                    // Redirect to task display page after sending user details
+                    window.location.href = '/taskDisplay';
                 } else {
                     console.error('Failed to send user details to /user-details endpoint');
                 }
             });
-
-            document.getElementById('login').style.display = 'none';
-            document.getElementById('taskManager').style.display = 'block';
-            if (data.role === 'manager') {
-                document.getElementById('taskForm').style.display = 'block';
-            }
-            // Call fetchAndDisplayTasks only after successful login
-            fetchAndDisplayTasks(data.role === 'manager' ? null : data.user_id);
+  
         } else {
             alert('Login failed!');
         }
     });
-}
+  }
 
-function logout() {
+  function logout() {
     fetch('/logout')
     .then(() => {
         // Clear userInfo object upon logout
         userInfo.id = null;
         userInfo.username = null;
         userInfo.role = null;
-
+  
         // Send user details to /user-details endpoint
         fetch('/user-details', {
             method: 'POST',
@@ -75,12 +70,10 @@ function logout() {
                 console.error('Failed to send user details to /user-details endpoint');
             }
         });
-
-        document.getElementById('login').style.display = 'block';
-        document.getElementById('taskManager').style.display = 'none';
-        document.getElementById('taskForm').style.display = 'none';
+  
+        window.location.href = '/';
     });
-}
+  }
 
 function assignTask() {
     const task_name = document.getElementById('taskDescription').value;
@@ -117,11 +110,17 @@ function assignTask() {
 }
 
 
-
-function displayTaskForm() {
-    document.getElementById('taskForm').style.display = 'block';
+// Call the functions to display tasks when the page loads
+function initializeTaskDisplay() {
+    populateAssignedToDropdown(); // Call the function to populate the assignedTo dropdown
+    fetchAndDisplayTasks(); // Call the function to fetch and display tasks
 }
 
+window.onload = () => {
+    if (window.location.pathname === '/taskDisplay') {
+        initializeTaskDisplay();
+    }
+};
 
 
 // Function to create accept button
@@ -347,12 +346,6 @@ function createTaskElement(task) {
     return taskElement;
 }
 
-
-
-// Call the populateDropdown and fetchAndDisplayTasks functions when the page loads
-window.onload = () => {
-    populateAssignedToDropdown(); // Call the function to populate the assignedTo dropdown
-};
 
 async function populateRoomDropdown() {
     console.log('populateRoomDropdown function called');

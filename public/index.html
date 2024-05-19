@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Hotel Housekeeping Management</title>
+    <title>Hotel Housekeeping Management - Login</title>
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
@@ -11,69 +11,6 @@
       <input type="text" id="username" placeholder="Username" />
       <input type="password" id="password" placeholder="Password" />
       <button onclick="login()">Login</button>
-    </div>
-    <div id="taskManager" style="display: none">
-      <div id="headerContainer">
-        <h1>Team Task</h1>
-        <button id="logoutButton" onclick="logout()">Logout</button>
-      </div>
-      <div id="taskForm">
-        <input
-          type="text"
-          id="taskDescription"
-          placeholder="Task Description"
-        />
-        <select id="areaSelection" onchange="populateRoomDropdown()">
-          <option value="">Select an Area</option>
-          <option value="a_block">A Block rooms</option>
-          <option value="b_block">B Block rooms</option>
-          <option value="other">Other Area</option>
-        </select>
-        <select id="roomSelection">
-          <option value="">Select a Room</option>
-        </select>
-        <select id="assignedTo">
-          <option value="">Select Assignee</option>
-        </select>
-        <button onclick="assignTask()" id="assignTaskBtn">Assign Task</button>
-      </div>
-      <div id="tasksContainer"></div>
-      <div>
-        <h2>Rejected Tasks</h2>
-        <div id="rejectedTasksContainer">
-          <!-- Rejected tasks will be displayed here -->
-        </div>
-      </div>
-      <div>
-        <h2>Assigned but Unaccepted Tasks</h2>
-        <div id="assignedUnacceptedTasksContainer">
-          <!-- Assigned but Unaccepted tasks will be displayed here -->
-        </div>
-      </div>
-      <div>
-        <h2>Accepted Tasks</h2>
-        <div id="acceptedTasksContainer">
-          <!-- Accepted tasks will be displayed here -->
-        </div>
-      </div>
-      <div>
-        <h2>Completed Tasks</h2>
-        <div id="completedTasksContainer">
-          <!-- Completed tasks will be displayed here -->
-        </div>
-      </div>
-      <div>
-        <h2>Verified Tasks</h2>
-        <div id="verifiedTasksContainer">
-          <!-- Verified tasks will be displayed here -->
-        </div>
-      </div>
-      <div>
-        <h2>Unassigned Tasks</h2>
-        <div id="unassignedTasksContainer">
-          <!-- Unassigned tasks will be displayed here -->
-        </div>
-      </div>
     </div>
     <script src="app.js"></script>
   </body>

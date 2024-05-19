@@ -34,6 +34,15 @@ app.use(express.static('public', {
   }
 }));
 
+// Serve taskDisplay.html
+app.get('/taskDisplay', (req, res) => {
+  if (req.session.user) {
+    res.sendFile(path.join(__dirname, 'public', 'taskDisplay.html'));
+  } else {
+    res.redirect('/');
+  }
+});
+
 // Routes
 app.post('/login', async (req, res) => {
   const { username, password } = req.body;
