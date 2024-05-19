@@ -111,14 +111,68 @@ function assignTask() {
 
 
 // Call the functions to display tasks when the page loads
-function initializeTaskDisplay() {
+async function initializeTaskDisplay() {
+    await fetchUserDetails();
     populateAssignedToDropdown(); // Call the function to populate the assignedTo dropdown
     fetchAndDisplayTasks(); // Call the function to fetch and display tasks
 }
 
-window.onload = () => {
+// Function to fetch and display tasks
+async function fetchAndDisplayTasks() {
+    try {
+        await fetchAndDisplaySectionTasks('/fetchTasks/rejected', 'rejectedTasksContainer');
+        await fetchAndDisplaySectionTasks('/fetchTasks/accepted', 'acceptedTasksContainer');
+        await fetchAndDisplaySectionTasks('/fetchTasks/completed', 'completedTasksContainer');
+        await fetchAndDisplaySectionTasks('/fetchTasks/verified', 'verifiedTasksContainer');
+        await fetchAndDisplaySectionTasks('/fetchTasks/unassigned', 'unassignedTasksContainer');
+        await fetchAndDisplaySectionTasks('/fetchTasks/assignedUnaccepted', 'assignedUnacceptedTasksContainer');
+    } catch (error) {
+        console.error('Error fetching and displaying tasks:', error);
+    }
+}
+
+async function fetchAndDisplaySectionTasks(endpoint, containerId) {
+    try {
+        console.log(`Fetching tasks from ${endpoint}`);
+        const response = await fetch(endpoint);
+        const tasks = await response.json();
+        console.log(`Fetched tasks:`, tasks);
+
+        const tasksContainer = document.getElementById(containerId);
+        if (!tasksContainer) {
+            console.error(`Container with id ${containerId} not found`);
+            return;
+        }
+
+        tasksContainer.innerHTML = '';
+
+       // Filter tasks based on user role, assignment, and stage
+      const filteredTasks = tasks.filter(task => {
+        const isVisible = (userInfo.role === 'manager' || compareIds(userInfo.id, task.assigned_to)) && task.stage === containerId;
+        console.log(`Task ID: ${task.id}, Assigned To: ${task.assigned_to}, Stage: ${task.stage}, Is Visible: ${isVisible}`);
+        console.log(`User Role is ${userInfo.role}, task is assigned to ${task.assigned_to}, user role is manager? ${userInfo.role === 'manager'}, task is assigned? ${compareIds(userInfo.id, task.assigned_to)}, task stage is ${task.stage}`);
+        return isVisible;
+    });
+
+
+        console.log(`Filtered tasks:`, filteredTasks);
+
+        // Render the filtered tasks
+        filteredTasks.forEach(task => {
+            const taskElement = createTaskElement(task);
+            tasksContainer.appendChild(taskElement);
+        });
+
+        console.log(`Tasks rendered in ${containerId}`);
+    } catch (error) {
+        console.error(`Error fetching and displaying tasks from ${endpoint}:`, error);
+    }
+}
+
+
+window.onload = async () => {
     if (window.location.pathname === '/taskDisplay') {
-        initializeTaskDisplay();
+        await initializeTaskDisplay();
     }
 };
 
@@ -141,123 +195,7 @@ function createRejectButton(taskId) {
     return rejectButton;
 }
 
-// Update fetchAndDisplayTasks function to use createAcceptButton and createRejectButton
-async function displayRejectedTasks() {
-    try {
-        console.log("Fetching rejected tasks...");
-        const response = await fetch('/fetchTasks/rejected');
-        const rejectedTasks = await response.json();
-        console.log("Received rejected tasks:", rejectedTasks); // Debugging statement
-        const rejectedTasksContainer = document.getElementById('rejectedTasksContainer');
-        rejectedTasksContainer.innerHTML = ''; // Clear previous tasks
 
-        if (Array.isArray(rejectedTasks)) {
-            rejectedTasks.forEach(task => {
-                console.log("Displaying rejected task:", task);
-                const taskElement = createTaskElement(task);
-                rejectedTasksContainer.appendChild(taskElement);
-            });
-        } else {
-            console.error("Rejected tasks is not an array:", rejectedTasks); // Debugging statement
-            // Handle the error or display a message to the user
-        }
-    } catch (error) {
-        console.error('Error fetching and displaying rejected tasks:', error);
-    }
-}
-
-// Function to display accepted tasks
-async function displayAcceptedTasks() {
-    try {
-        const response = await fetch('/fetchTasks/accepted');
-        const acceptedTasks = await response.json();
-        const acceptedTasksContainer = document.getElementById('acceptedTasksContainer');
-        acceptedTasksContainer.innerHTML = '';
-
-        // Filter out tasks that are completed
-        const filteredTasks = acceptedTasks.filter(task => !task.completed);
-
-        filteredTasks.forEach(task => {
-            const taskElement = createTaskElement(task);
-            acceptedTasksContainer.appendChild(taskElement);
-        });
-    } catch (error) {
-        console.error('Error fetching and displaying accepted tasks:', error);
-    }
-}
-
-// Function to display completed tasks
-async function displayCompletedTasks() {
-    try {
-        console.log("Fetching completed tasks...");
-        const response = await fetch('/fetchTasks/completed');
-        const completedTasks = await response.json();
-        const completedTasksContainer = document.getElementById('completedTasksContainer');
-        completedTasksContainer.innerHTML = ''; // Clear previous tasks
-
-        completedTasks.forEach(task => {
-            console.log("Displaying completed task:", task);
-            const taskElement = createTaskElement(task);
-            completedTasksContainer.appendChild(taskElement);
-        });
-    } catch (error) {
-        console.error('Error fetching and displaying completed tasks:', error);
-    }
-}
-
-// Function to display verified tasks
-async function displayVerifiedTasks() {
-    try {
-        console.log("Fetching verified tasks...");
-        const response = await fetch('/fetchTasks/verified');
-        const verifiedTasks = await response.json();
-        const verifiedTasksContainer = document.getElementById('verifiedTasksContainer');
-        verifiedTasksContainer.innerHTML = ''; // Clear previous tasks
-
-        verifiedTasks.forEach(task => {
-            console.log("Displaying verified task:", task);
-            const taskElement = createTaskElement(task);
-            verifiedTasksContainer.appendChild(taskElement);
-        });
-    } catch (error) {
-        console.error('Error fetching and displaying verified tasks:', error);
-    }
-}
-
-// Function to display unassigned tasks
-async function displayUnassignedTasks() {
-    try {
-        console.log("Fetching unassigned tasks...");
-        const response = await fetch('/fetchTasks/unassigned');
-        const unassignedTasks = await response.json();
-        const unassignedTasksContainer = document.getElementById('unassignedTasksContainer');
-        unassignedTasksContainer.innerHTML = ''; // Clear previous tasks
-
-        unassignedTasks.forEach(task => {
-            console.log("Displaying unassigned task:", task);
-            const taskElement = createTaskElement(task);
-            unassignedTasksContainer.appendChild(taskElement);
-        });
-    } catch (error) {
-        console.error('Error fetching and displaying unassigned tasks:', error);
-    }
-}
-
-async function displayAssignedUnacceptedTasks() {
-    try {
-        const response = await fetch('/fetchTasks/assignedUnaccepted');
-        const assignedUnacceptedTasks = await response.json();
-        const assignedUnacceptedTasksContainer = document.getElementById('assignedUnacceptedTasksContainer');
-        assignedUnacceptedTasksContainer.innerHTML = '';
-
-        assignedUnacceptedTasks.forEach(task => {
-            const taskElement = createTaskElement(task);
-            assignedUnacceptedTasksContainer.appendChild(taskElement);
-        });
-    } catch (error) {
-        console.error('Error fetching and displaying assigned but unaccepted tasks:', error);
-    }
-}
 // Function to create accept button
 function createAcceptButton(taskId) {
     const acceptButton = document.createElement('button');
@@ -498,19 +436,7 @@ function displayMessage(message) {
     }
 }
 
-// Call the functions to display tasks when the page loads
-async function fetchAndDisplayTasks() {
-    try {
-        await displayRejectedTasks();
-        await displayAcceptedTasks();
-        await displayCompletedTasks();
-        await displayVerifiedTasks();
-        await displayUnassignedTasks();
-        await displayAssignedUnacceptedTasks();
-    } catch (error) {
-        console.error('Error fetching and displaying tasks:', error);
-    }
-}
+
 
 
 // Function to fetch the room name using the room ID
@@ -549,4 +475,24 @@ async function fetchUserName(userId) {
         console.error('Error fetching user details:', error);
         return 'N/A';
     }
+}
+
+// Function to fetch user details
+async function fetchUserDetails() {
+    try {
+        const response = await fetch('/user-details');
+        const data = await response.json();
+        if (data.success) {
+            userInfo = data.user;
+            console.log('Fetched user details:', userInfo);
+        } else {
+            console.error('Failed to fetch user details');
+        }
+    } catch (error) {
+        console.error('Error fetching user details:', error);
+    }
+}
+
+function compareIds(id1, id2) {
+    return id1.toString().trim() === id2.toString().trim();
 }

@@ -83,18 +83,28 @@ app.post('/tasks', async (req, res) => {
       assigned_to = null;
   }
 
+  // Determine the stage based on the assigned_to value
+  let stage = 'assignedUnacceptedTasksContainer';
+  if (assigned_to.toString().trim() === '21'.toString().trim()) {
+      stage = 'unassignedTasksContainer';
+  }
+  console.log(stage);
+  console.log(`typeOf assigned_to is ${typeof(assigned_to)} type of 21 is ${typeof(21)} `);
+  console.log(`testing trim. to string method assigned_to.toString().trim() === 21.toString().trim() is ${assigned_to.toString().trim() === '21'.toString().trim()}`)
+
   try {
-      const client = await pool.connect();
-      const query = `
-          INSERT INTO tasks (task_name, created_by, assigned_to, area, area_details, created_at, assigned_at, completed_at, verified_by, verified_at)
-          VALUES ($1, $2, $3, $4, $5, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT)
-          RETURNING id, created_at, assigned_at, completed_at, verified_by, verified_at
-      `;
-      const result = await client.query(query, [task_name, created_by, assigned_to, areaSelection, roomSelection]);
-      client.release();
-      const task = result.rows[0];
-      res.json({ success: true, task });
-  } catch (error) {
+    const client = await pool.connect();
+    const query = `
+        INSERT INTO tasks (task_name, created_by, assigned_to, area, area_details, created_at, assigned_at, completed_at, verified_by, verified_at, stage)
+        VALUES ($1, $2, $3, $4, $5, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT, $6)
+        RETURNING id, created_at, assigned_at, completed_at, verified_by, verified_at, stage
+    `;
+    const result = await client.query(query, [task_name, created_by, assigned_to, areaSelection, roomSelection, stage]);
+    client.release();
+    const task = result.rows[0];
+
+    res.json({ success: true, task });
+} catch (error) {
       console.error('Error creating task:', error);
       res.status(500).json({ success: false, error: 'Internal server error' });
   }
@@ -155,10 +165,9 @@ app.get('/tasks/:taskId', async (req, res) => {
 
 app.put('/tasks/:taskId', async (req, res) => {
   const taskId = req.params.taskId;
-  const { task_name, area, area_details, assigned_to } = req.body;
+  const { task_name, area, area_details, assigned_to, stage } = req.body;
 
   try {
-      // Connect to the database
       const client = await pool.connect();
 
       // Check if the task exists
@@ -170,15 +179,15 @@ app.put('/tasks/:taskId', async (req, res) => {
           return res.status(404).json({ success: false, error: 'Task not found' });
       }
 
-      // Update the task and reset accepted and rejected status
+      // Update the task
       const updateQuery = `
-      UPDATE tasks 
-      SET task_name = $1, area = $2, area_details = $3, assigned_to = $4, 
+          UPDATE tasks 
+          SET task_name = $1, area = $2, area_details = $3, assigned_to = $4, stage = $5, 
           accepted = false, rejected = false, accepted_at = NULL, rejected_at = NULL
-          WHERE id = $5
+          WHERE id = $6
           RETURNING *
       `;
-      const values = [task_name, area, area_details, assigned_to, taskId];
+      const values = [task_name, area, area_details, assigned_to, stage, taskId];
       const updateResult = await client.query(updateQuery, values);
       client.release();
 
@@ -194,8 +203,8 @@ app.post('/tasks/:taskId/accept', async (req, res) => {
   try {
       // Update the task in the database to mark it as accepted and set the accepted timestamp
       const client = await pool.connect();
-      const query = 'UPDATE tasks SET accepted = true, accepted_at = NOW() WHERE id = $1';
-      await client.query(query, [taskId]);
+      const query = 'UPDATE tasks SET accepted = true, accepted_at = NOW(), stage = $1 WHERE id = $2';
+      await client.query(query, ['acceptedTasksContainer', taskId]);
       client.release();
       res.json({ success: true });
   } catch (error) {
@@ -210,8 +219,8 @@ app.post('/tasks/:taskId/reject', async (req, res) => {
   try {
       // Update the task in the database to mark it as rejected and set the rejected timestamp
       const client = await pool.connect();
-      const query = 'UPDATE tasks SET rejected = true, rejected_at = NOW() WHERE id = $1';
-      await client.query(query, [taskId]);
+      const query = 'UPDATE tasks SET rejected = true, rejected_at = NOW(), stage = $1 WHERE id = $2';
+        await client.query(query, ['rejectedTasksContainer', taskId]);
       client.release();
       res.json({ success: true });
   } catch (error) {
@@ -325,25 +334,15 @@ app.post('/user-details', (req, res) => {
 // Endpoint to mark a task as complete
 app.put('/tasks/:taskId/complete', async (req, res) => {
   const taskId = req.params.taskId;
-  const { completed_at } = req.body;
-
   try {
-      // Update the task in the database to mark it as complete
-      const updateQuery = 'UPDATE tasks SET completed = true, completed_at = $1 WHERE id = $2';
-      await pool.query(updateQuery, [completed_at, taskId]);
-
-      // If the update was successful, send a success response
-      res.json({
-          success: true,
-          message: 'Task marked as complete successfully'
-      });
+      const client = await pool.connect();
+      const query = 'UPDATE tasks SET completed = true, completed_at = NOW(), stage = $1 WHERE id = $2';
+      await client.query(query, ['completedTasksContainer', taskId]);
+      client.release();
+      res.json({ success: true });
   } catch (error) {
-      console.error('Error marking task as complete:', error);
-      // If an error occurred, send an error response
-      res.status(500).json({
-          success: false,
-          error: 'Failed to mark task as complete'
-      });
+      console.error('Error completing task:', error);
+      res.status(500).json({ success: false, error: 'Internal server error' });
   }
 });
 
@@ -351,24 +350,15 @@ app.put('/tasks/:taskId/complete', async (req, res) => {
 app.put('/tasks/:taskId/verify', async (req, res) => {
   const taskId = req.params.taskId;
   const { verified_by, verified_at } = req.body;
-
   try {
-      // Update the task in the database to mark it as verified
-      const updateQuery = 'UPDATE tasks SET verified_by = $1, verified_at = $2 WHERE id = $3';
-      await pool.query(updateQuery, [verified_by, verified_at, taskId]);
-
-      // If the update was successful, send a success response
-      res.json({
-          success: true,
-          message: 'Task marked as verified successfully'
-      });
+      const client = await pool.connect();
+      const query = 'UPDATE tasks SET verified_by = $1, verified_at = $2, stage = $3 WHERE id = $4';
+      await client.query(query, [verified_by, verified_at, 'verifiedTasksContainer', taskId]);
+      client.release();
+      res.json({ success: true });
   } catch (error) {
-      console.error('Error marking task as verified:', error);
-      // If an error occurred, send an error response
-      res.status(500).json({
-          success: false,
-          error: 'Failed to mark task as verified'
-      });
+      console.error('Error verifying task:', error);
+      res.status(500).json({ success: false, error: 'Internal server error' });
   }
 });
 
@@ -428,7 +418,7 @@ app.get('/fetchTasks/verified', async (req, res) => {
 // Define endpoint to fetch unassigned tasks
 app.get('/fetchTasks/unassigned', async (req, res) => {
   try {
-    const query = 'SELECT * FROM tasks WHERE assigned_to IS NULL';
+    const query = 'SELECT * FROM tasks WHERE assigned_to = 21';
     const result = await pool.query(query);
     const unassignedTasks = result.rows;
     res.json(unassignedTasks);
