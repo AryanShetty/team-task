@@ -170,10 +170,11 @@ app.put('/tasks/:taskId', async (req, res) => {
           return res.status(404).json({ success: false, error: 'Task not found' });
       }
 
-      // Update the task
+      // Update the task and reset accepted and rejected status
       const updateQuery = `
-          UPDATE tasks 
-          SET task_name = $1, area = $2, area_details = $3, assigned_to = $4
+      UPDATE tasks 
+      SET task_name = $1, area = $2, area_details = $3, assigned_to = $4, 
+          accepted = false, rejected = false, accepted_at = NULL, rejected_at = NULL
           WHERE id = $5
           RETURNING *
       `;
