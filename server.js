@@ -507,3 +507,76 @@ app.get('/users/:userId', async (req, res) => {
   }
 });
 
+// Endpoint to trigger stage update
+app.post('/update-task-stages', async (req, res) => {
+  try {
+      await updateTaskStages();
+      res.json({ success: true, message: 'Task stages updated successfully' });
+  } catch (error) {
+      console.error('Error updating task stages:', error);
+      res.status(500).json({ success: false, error: 'Internal server error' });
+  }
+});
+
+// Function to update task stages
+const updateTaskStages = async () => {
+  try {
+      const client = await pool.connect();
+
+      // Condition 1: Assigned but not accepted, rejected, completed, or verified
+      await client.query(`
+          UPDATE tasks 
+          SET stage = 'assignedUnacceptedTasksContainer'
+          WHERE created_at IS NOT NULL 
+          AND accepted = false 
+          AND rejected = false 
+          AND completed = false 
+          AND verified_at IS NULL;
+      `);
+
+      // Condition 2: Rejected tasks
+      await client.query(`
+          UPDATE tasks 
+          SET stage = 'rejectedTasksContainer'
+          WHERE rejected = true 
+          AND completed = false 
+          AND verified_at IS NULL;
+      `);
+
+      // Condition 3: Accepted but not completed or verified
+      await client.query(`
+          UPDATE tasks 
+          SET stage = 'acceptedTasksContainer'
+          WHERE accepted = true 
+          AND completed = false 
+          AND verified_at IS NULL;
+      `);
+
+      // Condition 4: Completed tasks but not verified
+      await client.query(`
+          UPDATE tasks 
+          SET stage = 'completedTasksContainer'
+          WHERE completed = true 
+          AND verified_at IS NULL;
+      `);
+
+      // Condition 5: Verified tasks
+      await client.query(`
+          UPDATE tasks 
+          SET stage = 'verifiedTasksContainer'
+          WHERE verified_at IS NOT NULL;
+      `);
+
+      // Condition 6: Unassigned tasks
+      await client.query(`
+          UPDATE tasks 
+          SET stage = 'unassignedTasksContainer'
+          WHERE assigned_to = 21;
+      `);
+
+      client.release();
+      console.log('Task stages updated successfully');
+  } catch (error) {
+      console.error('Error updating task stages:', error);
+  }
+}
