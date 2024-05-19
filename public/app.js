@@ -169,14 +169,15 @@ async function displayRejectedTasks() {
 // Function to display accepted tasks
 async function displayAcceptedTasks() {
     try {
-        console.log("Fetching accepted tasks...");
         const response = await fetch('/fetchTasks/accepted');
         const acceptedTasks = await response.json();
         const acceptedTasksContainer = document.getElementById('acceptedTasksContainer');
-        acceptedTasksContainer.innerHTML = ''; // Clear previous tasks
+        acceptedTasksContainer.innerHTML = '';
 
-        acceptedTasks.forEach(task => {
-            console.log("Displaying accepted task:", task);
+        // Filter out tasks that are completed
+        const filteredTasks = acceptedTasks.filter(task => !task.completed);
+
+        filteredTasks.forEach(task => {
             const taskElement = createTaskElement(task);
             acceptedTasksContainer.appendChild(taskElement);
         });
