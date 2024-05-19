@@ -571,7 +571,7 @@ const updateTaskStages = async () => {
       await client.query(`
           UPDATE tasks 
           SET stage = 'unassignedTasksContainer'
-          WHERE assigned_to = 21;
+          WHERE assigned_to = 22;
       `);
 
       client.release();
