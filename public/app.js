@@ -94,8 +94,13 @@ function assignTask() {
     .then(data => {
         if (data.success) {
             // Reset the dropdowns back to their default options
+            document.getElementById('taskDescription').value = '';
             areaSelection.value = '';
-            roomSelection.value = '';
+            roomSelection.innerHTML = '<option value="">Select a Room</option>';
+            assigned_to.value = '';
+
+            // Refresh the page
+            location.reload();
             
             // After assigning the task, fetch and display all tasks
             fetchAndDisplayTasks();
