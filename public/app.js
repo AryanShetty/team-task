@@ -153,6 +153,7 @@ async function fetchAndDisplaySectionTasks(endpoint, containerId) {
         console.log(`User Role is ${userInfo.role}, task is assigned to ${task.assigned_to}, user role is manager? ${userInfo.role === 'manager'}, task is assigned? ${compareIds(userInfo.id, task.assigned_to)}, task stage is ${task.stage}`);
         return isVisible;
     });
+    console.log(filteredTasks);
 
 
         console.log(`Filtered tasks:`, filteredTasks);
@@ -169,6 +170,12 @@ async function fetchAndDisplaySectionTasks(endpoint, containerId) {
     }
 }
 
+function compareIds(id1, id2) {
+    if (id1 === null || id2 === null) {
+        return false;
+    }
+    return id1.toString().trim() === id2.toString().trim();
+}
 
 window.onload = async () => {
     if (window.location.pathname === '/taskDisplay') {
@@ -493,6 +500,3 @@ async function fetchUserDetails() {
     }
 }
 
-function compareIds(id1, id2) {
-    return id1.toString().trim() === id2.toString().trim();
-}
