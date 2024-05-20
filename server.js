@@ -71,7 +71,7 @@ app.post('/tasks', async (req, res) => {
   }
 
   const { task_name, areaSelection, roomSelection } = req.body;
-  const created_by = req.session.user.user_id; // Use user_id instead of id
+  const created_by = req.session.user.user_id;
   let assigned_to = null;
 
   if (req.session.user.role === 'manager') {
@@ -83,32 +83,27 @@ app.post('/tasks', async (req, res) => {
       assigned_to = null;
   }
 
-  // Determine the stage based on the assigned_to value
-  let stage = 'assignedUnacceptedTasksContainer';
-  if (assigned_to.toString().trim() === '22'.toString().trim()) {
-      stage = 'unassignedTasksContainer';
-  }
-  console.log(stage);
-  console.log(`typeOf assigned_to is ${typeof(assigned_to)} type of 21 is ${typeof(21)} `);
-  console.log(`testing trim. to string method assigned_to.toString().trim() === 21.toString().trim() is ${assigned_to.toString().trim() === '21'.toString().trim()}`)
+  let unassigned = !assigned_to;
 
   try {
-    const client = await pool.connect();
-    const query = `
-        INSERT INTO tasks (task_name, created_by, assigned_to, area, area_details, created_at, assigned_at, completed_at, verified_by, verified_at, stage)
-        VALUES ($1, $2, $3, $4, $5, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT, $6)
-        RETURNING id, created_at, assigned_at, completed_at, verified_by, verified_at, stage
-    `;
-    const result = await client.query(query, [task_name, created_by, assigned_to, areaSelection, roomSelection, stage]);
-    client.release();
-    const task = result.rows[0];
+      const client = await pool.connect();
+      const query = `
+          INSERT INTO tasks (task_name, created_by, assigned_to, area, area_details, created_at, assigned_at, completed_at, verified_by, verified_at, stage, unassigned)
+          VALUES ($1, $2, $3, $4, $5, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT, $6, $7)
+          RETURNING id, created_at, assigned_at, completed_at, verified_by, verified_at, stage, unassigned
+      `;
+      const stage = unassigned ? 'unassignedTasksContainer' : 'assignedUnacceptedTasksContainer';
+      const result = await client.query(query, [task_name, created_by, assigned_to, areaSelection, roomSelection, stage, unassigned]);
+      client.release();
+      const task = result.rows[0];
 
-    res.json({ success: true, task });
-} catch (error) {
+      res.json({ success: true, task });
+  } catch (error) {
       console.error('Error creating task:', error);
       res.status(500).json({ success: false, error: 'Internal server error' });
   }
 });
+
 
 // Define a new route to fetch tasks
 app.get('/tasks', async (req, res) => {
@@ -418,15 +413,16 @@ app.get('/fetchTasks/verified', async (req, res) => {
 // Define endpoint to fetch unassigned tasks
 app.get('/fetchTasks/unassigned', async (req, res) => {
   try {
-    const query = 'SELECT * FROM tasks WHERE assigned_to = 21';
-    const result = await pool.query(query);
-    const unassignedTasks = result.rows;
-    res.json(unassignedTasks);
+      const query = 'SELECT * FROM tasks WHERE unassigned = true';
+      const result = await pool.query(query);
+      const unassignedTasks = result.rows;
+      res.json(unassignedTasks);
   } catch (error) {
-    console.error('Error fetching unassigned tasks:', error);
-    res.status(500).json({ error: 'Internal server error' });
+      console.error('Error fetching unassigned tasks:', error);
+      res.status(500).json({ error: 'Internal server error' });
   }
 });
+
 
 app.get('/fetchTasks/assignedUnaccepted', async (req, res) => {
   try {
@@ -571,7 +567,7 @@ const updateTaskStages = async () => {
       await client.query(`
           UPDATE tasks 
           SET stage = 'unassignedTasksContainer'
-          WHERE assigned_to = 22;
+          WHERE unassigned = true;
       `);
 
       client.release();

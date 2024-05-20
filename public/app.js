@@ -75,9 +75,9 @@ function login() {
     });
   }
 
-function assignTask() {
+  function assignTask() {
     const task_name = document.getElementById('taskDescription').value;
-    const assigned_to = document.getElementById('assignedTo').value;
+    const assigned_to = document.getElementById('assignedTo').value || null;
     const areaSelection = document.getElementById('areaSelection');
     const roomSelection = document.getElementById('roomSelection');
 
@@ -92,18 +92,16 @@ function assignTask() {
     })
     .then(response => response.json())
     .then(data => {
+        console.log('Response from server:', data); // Add this line for debugging
         if (data.success) {
             // Reset the dropdowns back to their default options
             document.getElementById('taskDescription').value = '';
             areaSelection.value = '';
             roomSelection.innerHTML = '<option value="">Select a Room</option>';
-            assigned_to.value = '';
+            document.getElementById('assignedTo').value = '';
 
             // Refresh the page
             location.reload();
-            
-            // After assigning the task, fetch and display all tasks
-            fetchAndDisplayTasks();
         } else {
             alert('Task assignment failed!');
         }
@@ -113,6 +111,7 @@ function assignTask() {
         alert('Failed to assign task. Please try again later.');
     });
 }
+
 
 
 // Call the functions to display tasks when the page loads
@@ -351,6 +350,13 @@ async function populateAssignedToDropdown() {
     const assignedToDropdown = document.getElementById('assignedTo');
     assignedToDropdown.innerHTML = ''; // Clear previous options
 
+    // Add the 'Unassigned' option first
+    const unassignedOption = document.createElement('option');
+    unassignedOption.value = '';
+    unassignedOption.textContent = 'Unassigned';
+    unassignedOption.selected = true; // Set as default selected option
+    assignedToDropdown.appendChild(unassignedOption);
+
     try {
         const response = await fetch('/users');
         const users = await response.json();
@@ -359,11 +365,6 @@ async function populateAssignedToDropdown() {
             const option = document.createElement('option');
             option.value = user.id;
             option.textContent = user.username;
-
-            // Set 'Unassigned' as the default selected option
-            if (user.username === 'Unassigned') {
-                option.selected = true;
-            }
 
             assignedToDropdown.appendChild(option);
         });
