@@ -187,26 +187,6 @@ window.onload = async () => {
     }
 };
 
-
-// Function to create accept button
-function createAcceptButton(taskId) {
-    const acceptButton = document.createElement('button');
-    acceptButton.textContent = 'Accept Task';
-    acceptButton.classList.add('accept-button'); // Add class to accept button
-    acceptButton.addEventListener('click', () => acceptTask(taskId));
-    return acceptButton;
-}
-
-// Function to create reject button
-function createRejectButton(taskId) {
-    const rejectButton = document.createElement('button');
-    rejectButton.textContent = 'Reject Task';
-    rejectButton.classList.add('reject-button'); // Add class to reject button
-    rejectButton.addEventListener('click', () => rejectTask(taskId));
-    return rejectButton;
-}
-
-
 // Function to create accept button
 function createAcceptButton(taskId) {
     const acceptButton = document.createElement('button');
@@ -285,7 +265,7 @@ function createTaskElement(task) {
         assignedTo.textContent = 'Assigned To: N/A';
     });
     // Conditionally render accept and reject buttons
-    if (!task.accepted && !task.rejected) {
+    if (!task.accepted && !task.rejected &&!task.unassigned) {
         const buttonContainer = document.createElement('div');
         buttonContainer.id = `task-${task.id}-buttons`;
         buttonContainer.appendChild(createAcceptButton(task.id));
