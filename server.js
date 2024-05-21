@@ -84,16 +84,17 @@ app.post('/tasks', async (req, res) => {
   }
 
   let unassigned = !assigned_to;
+  let assigned_at = unassigned ? null : new Date(); // Set the current timestamp if assigned_to is not null
 
   try {
       const client = await pool.connect();
       const query = `
           INSERT INTO tasks (task_name, created_by, assigned_to, area, area_details, created_at, assigned_at, completed_at, verified_by, verified_at, stage, unassigned)
-          VALUES ($1, $2, $3, $4, $5, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT, $6, $7)
+          VALUES ($1, $2, $3, $4, $5, DEFAULT, $6, DEFAULT, DEFAULT, DEFAULT, $7, $8)
           RETURNING id, created_at, assigned_at, completed_at, verified_by, verified_at, stage, unassigned
       `;
       const stage = unassigned ? 'unassignedTasksContainer' : 'assignedUnacceptedTasksContainer';
-      const result = await client.query(query, [task_name, created_by, assigned_to, areaSelection, roomSelection, stage, unassigned]);
+      const result = await client.query(query, [task_name, created_by, assigned_to, areaSelection, roomSelection, assigned_at, stage, unassigned]);
       client.release();
       const task = result.rows[0];
 
@@ -103,6 +104,7 @@ app.post('/tasks', async (req, res) => {
       res.status(500).json({ success: false, error: 'Internal server error' });
   }
 });
+
 
 
 // Define a new route to fetch tasks
