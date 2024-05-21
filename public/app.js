@@ -185,6 +185,12 @@ window.onload = async () => {
     if (window.location.pathname === '/taskDisplay') {
         await initializeTaskDisplay();
     }
+    window.addEventListener('pageshow', (event) => {
+        if (event.persisted || (window.performance && window.performance.navigation.type === 2)) {
+            // The page was loaded from cache
+            initializeTaskDisplay();
+        }
+    });
 };
 
 // Function to create accept button
