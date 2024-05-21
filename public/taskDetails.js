@@ -13,6 +13,7 @@ async function initializePage() {
         const task = await fetchTaskDetails();
         if (task) {
             await fetchRoomDetails(task);
+            await fetchUserNames(task); // Fetch usernames for assigned_to, created_by, and verified_by
             initializeDropdowns(task);
             displayTaskDetails(task);
         }
@@ -53,11 +54,38 @@ async function fetchRoomDetails(task) {
 
 async function fetchUserDetails() {
     try {
-        const response = await fetch(`/user-details`);
+        const response = await fetch('/user-details');
         const data = await response.json();
         window.currentUser = data.user;
     } catch (error) {
         console.error('Error fetching user details:', error);
+    }
+}
+
+async function fetchUserNames(task) {
+    try {
+        task.assigned_to_name = task.assigned_to ? await fetchUserName(task.assigned_to) : 'Not Assigned';
+        task.created_by_name = task.created_by ? await fetchUserName(task.created_by) : 'Not Assigned';
+        task.verified_by_name = task.verified_by ? await fetchUserName(task.verified_by) : 'Not Verified';
+    } catch (error) {
+        console.error('Error fetching user names:', error);
+    }
+}
+
+async function fetchUserName(userId) {
+    if (!userId) return 'N/A'; // Handle cases where userId is null or undefined
+    try {
+        const response = await fetch(`/users/${userId}`);
+        const user = await response.json();
+        if (response.ok) {
+            return user.username || 'N/A'; // Return the username or 'N/A' if not found
+        } else {
+            console.error('Error fetching user details:', user.error);
+            return 'N/A';
+        }
+    } catch (error) {
+        console.error('Error fetching user details:', error);
+        return 'N/A';
     }
 }
 
@@ -181,21 +209,17 @@ function displayTaskDetails(task) {
         const verifyBtnStyle = verifyBtnText ? 'block' : 'none';
 
         taskDetailsContainer.innerHTML = `
-            <p><strong>Task Description:</strong> ${task.task_name}</p>
-            <input type="text" id="taskDescriptionEdit" value="${task.task_name || ''}" style="display: none;">
-            <p><strong>Area Selection:</strong> ${task.area}</p>
-            <select id="areaSelectionEdit" style="display: none;" onchange="populateRoomDropdown(this.value)"></select>
-            <p><strong>Room Selection:</strong> ${task.room_name}</p>
-            <select id="roomSelectionEdit" style="display: none;"></select>
-            <p><strong>Assigned To:</strong> ${task.assigned_to}</p>
-            <select id="assignedToEdit" style="display: none;"></select>
-            <p><strong>Assigned At:</strong> ${task.assigned_at}</p>
-            <p><strong>Created By:</strong> ${task.created_by}</p>
-            <p><strong>Created At:</strong> ${task.created_at}</p>
-            <p><strong>Completed At:</strong> ${task.completed_at}</p>
-            <p><strong>Verified By:</strong> ${task.verified_by}</p>
-            <p><strong>Verified At:</strong> ${task.verified_at}</p>
-            <p><strong>Task ID:</strong> ${task.id}</p>
+            <div class="task-detail"><strong>Task Description:</strong> <div>${task.task_name || 'Not Assigned'}</div></div>
+            <div class="task-detail"><strong>Area Selection:</strong> <div>${formatAreaSelection(task.area)}</div></div>
+            <div class="task-detail"><strong>Room Selection:</strong> <div>${task.room_name || 'Not Assigned'}</div></div>
+            <div class="task-detail"><strong>Assigned To:</strong> <div>${task.assigned_to_name || 'Not Assigned'}</div></div>
+            <div class="task-detail"><strong>Assigned At:</strong> <div>${formatDate(task.assigned_at) || 'Not Assigned'}</div></div>
+            <div class="task-detail"><strong>Created By:</strong> <div>${task.created_by_name || 'Not Assigned'}</div></div>
+            <div class="task-detail"><strong>Created At:</strong> <div>${formatDate(task.created_at) || 'Not Assigned'}</div></div>
+            <div class="task-detail"><strong>Completed At:</strong> <div>${formatDate(task.completed_at) || 'Not Completed'}</div></div>
+            <div class="task-detail"><strong>Verified By:</strong> <div>${task.verified_by_name || 'Not Verified'}</div></div>
+            <div class="task-detail"><strong>Verified At:</strong> <div>${formatDate(task.verified_at) || 'Not Verified'}</div></div>
+            <div class="task-detail"><strong>Task ID:</strong> <div>${task.id}</div></div>
             <button id="markCompleteBtn" style="display: ${markCompleteBtnStyle}" onclick="${markCompleteBtnOnClick}">${markCompleteBtnText}</button>
             <button id="verifyBtn" style="display: ${verifyBtnStyle}" onclick="${verifyBtnOnClick}">${verifyBtnText}</button>
             <button id="editTaskBtn" onclick="toggleEdit(${task.id})">Edit Task</button>
@@ -316,4 +340,23 @@ function markTaskVerified(taskId) {
         .catch(error => {
             console.error('Error marking task as verified:', error);
         });
+}
+
+function formatAreaSelection(area) {
+    switch (area) {
+        case 'a_block':
+            return 'A Block';
+        case 'b_block':
+            return 'B Block';
+        case 'other':
+            return 'Other Area';
+        default:
+            return 'Not Assigned';
+    }
+}
+
+function formatDate(dateString) {
+    if (!dateString) return null;
+    const date = new Date(dateString);
+    return date.toLocaleString();
 }

@@ -1,0 +1,30 @@
+body {
+  font-family: Arial, sans-serif;
+  background-color: #f4f4f9;
+  margin: 0;
+  padding: 0;
+}
+#taskDetailsContainer {
+  max-width: 800px;
+  margin: 20px auto;
+  padding: 20px;
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+h1 {
+  text-align: center;
+}
+.task-detail {
+  margin-bottom: 10px;
+}
+.task-detail strong {
+  display: inline-block;
+  width: 150px;
+}
+.task-detail div {
+  display: inline-block;
+}
+.task-detail button {
+  margin: 10px 0;
+}
