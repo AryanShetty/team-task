@@ -269,7 +269,8 @@ function toggleEdit() {
     }
 }
 
-function updateTask(taskId) {
+function updateTask() {
+    const taskId = getTaskIdFromURL();
     const taskName = document.getElementById('taskDescriptionEdit').value;
     const taskArea = document.getElementById('areaSelectionEdit').value;
     const areaDetails = document.getElementById('roomSelectionEdit').value;
@@ -280,27 +281,28 @@ function updateTask(taskId) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ task_name: taskName, area: taskArea, area_details: areaDetails, assigned_to: assignedTo })
     })
-        .then(response => {
-            if (!response.ok) {
-                return response.json().then(err => {
-                    throw new Error(`Failed to update task: ${err.error}`);
-                });
-            }
-            return response.json();
-        })
-        .then(data => {
-            if (data.success) {
-                console.log('Task updated successfully');
-                location.reload();
-            } else {
-                console.error('Failed to update task:', data.error);
-            }
-        })
-        .catch(error => {
-            console.error('Error updating task:', error);
-            alert(`Failed to update task: ${error.message}`);
-        });
+    .then(response => {
+        if (!response.ok) {
+            return response.json().then(err => {
+                throw new Error(`Failed to update task: ${err.error}`);
+            });
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            console.log('Task updated successfully');
+            location.reload();
+        } else {
+            console.error('Failed to update task:', data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error updating task:', error);
+        alert(`Failed to update task: ${error.message}`);
+    });
 }
+
 
 function getTaskIdFromURL() {
     const queryString = window.location.search;
