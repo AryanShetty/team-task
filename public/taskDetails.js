@@ -341,7 +341,7 @@ function markTaskVerified(taskId) {
     fetch(`/tasks/${taskId}/verify`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ verified_by: currentUser.id, verified_at: new Date() })
+        body: JSON.stringify({ verified_by: currentUser.id})
     })
         .then(response => response.json())
         .then(data => {
