@@ -204,6 +204,7 @@ function populateElements(task) {
 
     const markCompleteBtn = document.getElementById('markCompleteBtn');
     const verifyBtn = document.getElementById('verifyBtn');
+    const editTaskBtn = document.getElementById('editTaskBtn');
 
     if (currentUser.role === 'manager' || task.assigned_to === currentUser.id) {
         if (!task.accepted) {
@@ -230,6 +231,10 @@ function populateElements(task) {
             verifyBtn.textContent = 'Complete Task Before Verifying';
             verifyBtn.style.display = 'none';
         }
+    }
+    // Hide edit button for completed or verified tasks
+    if (task.completed_at || task.verified_at) {
+        editTaskBtn.style.display = 'none';
     }
 }
 
