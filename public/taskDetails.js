@@ -1,11 +1,37 @@
 document.addEventListener('DOMContentLoaded', async () => {
     console.log("DOM content loaded");
     try {
+        initializeElements(); // Initialize elements
         await initializePage();
     } catch (error) {
         console.error('Error initializing page:', error);
     }
 });
+
+function initializeElements() {
+    const taskDetailsContainer = document.getElementById('taskDetails');
+    taskDetailsContainer.innerHTML = `
+        <p><strong>Task Description:</strong> <span id="taskDescriptionDisplay"></span></p>
+        <input type="text" id="taskDescriptionEdit" style="display: none;">
+        <p><strong>Area Selection:</strong> <span id="areaSelectionDisplay"></span></p>
+        <select id="areaSelectionEdit" style="display: none;" onchange="populateRoomDropdown(this.value)"></select>
+        <p><strong>Room Selection:</strong> <span id="roomSelectionDisplay"></span></p>
+        <select id="roomSelectionEdit" style="display: none;"></select>
+        <p><strong>Assigned To:</strong> <span id="assignedToDisplay"></span></p>
+        <select id="assignedToEdit" style="display: none;"></select>
+        <p><strong>Assigned At:</strong> <span id="assignedAtDisplay"></span></p>
+        <p><strong>Created By:</strong> <span id="createdByDisplay"></span></p>
+        <p><strong>Created At:</strong> <span id="createdAtDisplay"></span></p>
+        <p><strong>Completed At:</strong> <span id="completedAtDisplay"></span></p>
+        <p><strong>Verified By:</strong> <span id="verifiedByDisplay"></span></p>
+        <p><strong>Verified At:</strong> <span id="verifiedAtDisplay"></span></p>
+        <p><strong>Task ID:</strong> <span id="taskIdDisplay"></span></p>
+        <button id="markCompleteBtn" style="display: none;"></button>
+        <button id="verifyBtn" style="display: none;"></button>
+        <button id="editTaskBtn" onclick="toggleEdit()">Edit Task</button>
+        <button id="updateTaskBtn" style="display: none;" onclick="updateTask()">Update Task</button>
+    `;
+}
 
 async function initializePage() {
     try {
@@ -14,8 +40,7 @@ async function initializePage() {
         if (task) {
             await fetchRoomDetails(task);
             await fetchUserNames(task); // Fetch usernames for assigned_to, created_by, and verified_by
-            initializeDropdowns(task);
-            displayTaskDetails(task);
+            populateElements(task); // Populate elements with data
         }
     } catch (error) {
         console.error('Error initializing page:', error);
@@ -54,7 +79,7 @@ async function fetchRoomDetails(task) {
 
 async function fetchUserDetails() {
     try {
-        const response = await fetch('/user-details');
+        const response = await fetch(`/user-details`);
         const data = await response.json();
         window.currentUser = data.user;
     } catch (error) {
@@ -63,29 +88,16 @@ async function fetchUserDetails() {
 }
 
 async function fetchUserNames(task) {
-    try {
-        task.assigned_to_name = task.assigned_to ? await fetchUserName(task.assigned_to) : 'Not Assigned';
-        task.created_by_name = task.created_by ? await fetchUserName(task.created_by) : 'Not Assigned';
-        task.verified_by_name = task.verified_by ? await fetchUserName(task.verified_by) : 'Not Verified';
-    } catch (error) {
-        console.error('Error fetching user names:', error);
+    if (task.assigned_to) {
+        task.assigned_to_name = await fetchUserName(task.assigned_to);
+    } else {
+        task.assigned_to_name = 'Not Assigned';
     }
-}
-
-async function fetchUserName(userId) {
-    if (!userId) return 'N/A'; // Handle cases where userId is null or undefined
-    try {
-        const response = await fetch(`/users/${userId}`);
-        const user = await response.json();
-        if (response.ok) {
-            return user.username || 'N/A'; // Return the username or 'N/A' if not found
-        } else {
-            console.error('Error fetching user details:', user.error);
-            return 'N/A';
-        }
-    } catch (error) {
-        console.error('Error fetching user details:', error);
-        return 'N/A';
+    task.created_by_name = await fetchUserName(task.created_by);
+    if (task.verified_by) {
+        task.verified_by_name = await fetchUserName(task.verified_by);
+    } else {
+        task.verified_by_name = 'Not Verified';
     }
 }
 
@@ -176,69 +188,63 @@ async function populateRoomDropdown(selectedArea, selectedRoom) {
     }
 }
 
-function displayTaskDetails(task) {
-    console.log("Displaying task details:", task);
-    const taskDetailsContainer = document.getElementById('taskDetails');
+function populateElements(task) {
+    document.getElementById('taskDescriptionDisplay').textContent = task.task_name;
+    document.getElementById('taskDescriptionEdit').value = task.task_name || '';
+    document.getElementById('areaSelectionDisplay').textContent = formatAreaSelection(task.area);
+    document.getElementById('roomSelectionDisplay').textContent = task.room_name;
+    document.getElementById('assignedToDisplay').textContent = task.assigned_to_name;
+    document.getElementById('assignedAtDisplay').textContent = formatDate(task.assigned_at) || 'Not Assigned';
+    document.getElementById('createdByDisplay').textContent = task.created_by_name;
+    document.getElementById('createdAtDisplay').textContent = formatDate(task.created_at);
+    document.getElementById('completedAtDisplay').textContent = formatDate(task.completed_at) || 'Not Completed';
+    document.getElementById('verifiedByDisplay').textContent = task.verified_by_name;
+    document.getElementById('verifiedAtDisplay').textContent = formatDate(task.verified_at) || 'Not Verified';
+    document.getElementById('taskIdDisplay').textContent = task.id;
 
-    if (taskDetailsContainer) {
-        const isCompleted = !!task.completed_at;
-        const isManager = currentUser.role === 'manager';
+    const markCompleteBtn = document.getElementById('markCompleteBtn');
+    const verifyBtn = document.getElementById('verifyBtn');
 
-        let markCompleteBtnText = '';
-        let markCompleteBtnOnClick = '';
-        let verifyBtnText = '';
-        let verifyBtnOnClick = '';
-
-        if (!isCompleted) {
-            markCompleteBtnText = 'Complete Task';
-            markCompleteBtnOnClick = `markTaskComplete(${task.id})`;
+    if (currentUser.role === 'manager' || task.assigned_to === currentUser.id) {
+        if (!task.accepted) {
+            markCompleteBtn.textContent = 'Accept Task';
+            markCompleteBtn.style.display = 'block';
+            markCompleteBtn.onclick = () => acceptTask(task.id);
+        } else if (!task.completed_at) {
+            markCompleteBtn.textContent = 'Complete Task';
+            markCompleteBtn.style.display = 'block';
+            markCompleteBtn.onclick = () => markTaskComplete(task.id);
         } else {
-            markCompleteBtnText = 'Task Completed';
+            markCompleteBtn.textContent = 'Task Completed';
+            markCompleteBtn.style.display = 'none';
         }
 
-        if (isManager) {
-            if (isCompleted) {
-                verifyBtnText = 'Verify Task';
-                verifyBtnOnClick = `markTaskVerified(${task.id})`;
-            } else {
-                verifyBtnText = 'Task Not Complete';
-            }
+        if (task.completed_at && !task.verified_at) {
+            verifyBtn.textContent = 'Verify Task';
+            verifyBtn.style.display = 'block';
+            verifyBtn.onclick = () => markTaskVerified(task.id);
+        } else if (task.verified_at) {
+            verifyBtn.textContent = 'Task Verified';
+            verifyBtn.style.display = 'none';
+        } else {
+            verifyBtn.textContent = 'Complete Task Before Verifying';
+            verifyBtn.style.display = 'none';
         }
-
-        const markCompleteBtnStyle = markCompleteBtnText ? 'block' : 'none';
-        const verifyBtnStyle = verifyBtnText ? 'block' : 'none';
-
-        taskDetailsContainer.innerHTML = `
-            <div class="task-detail"><strong>Task Description:</strong> <div>${task.task_name || 'Not Assigned'}</div></div>
-            <div class="task-detail"><strong>Area Selection:</strong> <div>${formatAreaSelection(task.area)}</div></div>
-            <div class="task-detail"><strong>Room Selection:</strong> <div>${task.room_name || 'Not Assigned'}</div></div>
-            <div class="task-detail"><strong>Assigned To:</strong> <div>${task.assigned_to_name || 'Not Assigned'}</div></div>
-            <div class="task-detail"><strong>Assigned At:</strong> <div>${formatDate(task.assigned_at) || 'Not Assigned'}</div></div>
-            <div class="task-detail"><strong>Created By:</strong> <div>${task.created_by_name || 'Not Assigned'}</div></div>
-            <div class="task-detail"><strong>Created At:</strong> <div>${formatDate(task.created_at) || 'Not Assigned'}</div></div>
-            <div class="task-detail"><strong>Completed At:</strong> <div>${formatDate(task.completed_at) || 'Not Completed'}</div></div>
-            <div class="task-detail"><strong>Verified By:</strong> <div>${task.verified_by_name || 'Not Verified'}</div></div>
-            <div class="task-detail"><strong>Verified At:</strong> <div>${formatDate(task.verified_at) || 'Not Verified'}</div></div>
-            <div class="task-detail"><strong>Task ID:</strong> <div>${task.id}</div></div>
-            <button id="markCompleteBtn" style="display: ${markCompleteBtnStyle}" onclick="${markCompleteBtnOnClick}">${markCompleteBtnText}</button>
-            <button id="verifyBtn" style="display: ${verifyBtnStyle}" onclick="${verifyBtnOnClick}">${verifyBtnText}</button>
-            <button id="editTaskBtn" onclick="toggleEdit(${task.id})">Edit Task</button>
-            <button id="updateTaskBtn" style="display: none;" onclick="updateTask(${task.id})">Update Task</button>
-        `;
-    } else {
-        console.error('taskDetailsContainer element not found');
     }
 }
 
-function toggleEdit(taskId) {
-    const inputs = document.querySelectorAll('input[type="text"], select');
+function toggleEdit() {
+    const displayElements = document.querySelectorAll('#taskDescriptionDisplay, #areaSelectionDisplay, #roomSelectionDisplay, #assignedToDisplay');
+    const editElements = document.querySelectorAll('#taskDescriptionEdit, #areaSelectionEdit, #roomSelectionEdit, #assignedToEdit');
     const editBtn = document.getElementById('editTaskBtn');
     const updateBtn = document.getElementById('updateTaskBtn');
 
-    inputs.forEach(input => {
-        if (input.id.includes('Edit')) {
-            input.style.display = input.style.display === 'none' ? 'inline-block' : 'none';
-        }
+    displayElements.forEach(element => {
+        element.style.display = element.style.display === 'none' ? 'inline-block' : 'none';
+    });
+
+    editElements.forEach(element => {
+        element.style.display = element.style.display === 'none' ? 'inline-block' : 'none';
     });
 
     if (editBtn) {
@@ -254,7 +260,7 @@ function toggleEdit(taskId) {
     }
 
     // Re-populate the dropdowns when entering edit mode
-    if (inputs[0].style.display === 'inline-block') {
+    if (editElements[0].style.display === 'inline-block') {
         fetchTaskDetails().then(task => {
             if (task) {
                 initializeDropdowns(task);
@@ -359,4 +365,21 @@ function formatDate(dateString) {
     if (!dateString) return null;
     const date = new Date(dateString);
     return date.toLocaleString();
+}
+
+async function fetchUserName(userId) {
+    if (!userId) return 'N/A'; // Handle cases where userId is null or undefined
+    try {
+        const response = await fetch(`/users/${userId}`);
+        const user = await response.json();
+        if (response.ok) {
+            return user.username || 'N/A'; // Return the username or 'N/A' if not found
+        } else {
+            console.error('Error fetching user details:', user.error);
+            return 'N/A';
+        }
+    } catch (error) {
+        console.error('Error fetching user details:', error);
+        return 'N/A';
+    }
 }
