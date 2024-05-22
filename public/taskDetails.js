@@ -162,11 +162,16 @@ async function populateRoomDropdown(selectedArea, selectedRoom) {
                 const areaId = selectedArea === 'a_block' ? 1 : 2;
                 const response = await fetch(`/areas/${areaId}/rooms`);
                 const rooms = await response.json();
+                console.log (`area ID = ${areaId} response is ${rooms}`);
                 rooms.forEach(room => {
                     const option = document.createElement('option');
                     option.value = room.id;
                     option.textContent = room.name;
-                    option.selected = room.id === selectedRoom;
+                    console.log(`Room.id  is ${room.id} selectedRoom is ${selectedRoom}`);
+                    console.log(`Do they equal ${compareIds(room.id,selectedRoom)}`);
+                    if (compareIds(room.id,selectedRoom)) {
+                        option.selected = true;
+                    }
                     roomSelection.appendChild(option);
                 });
             } catch (error) {
@@ -179,13 +184,22 @@ async function populateRoomDropdown(selectedArea, selectedRoom) {
                 const option = document.createElement('option');
                 option.value = optionText.toLowerCase().replace(' ', '_');
                 option.textContent = optionText;
-                option.selected = option.value === selectedRoom;
+                if (option.value === selectedRoom) {
+                    option.selected = true;
+                }
                 roomSelection.appendChild(option);
             });
         }
     } else {
         console.error('roomSelection element not found');
     }
+}
+
+function compareIds(id1, id2) {
+    if (id1 === null || id2 === null) {
+        return false;
+    }
+    return id1.toString().trim() === id2.toString().trim();
 }
 
 function populateElements(task) {
