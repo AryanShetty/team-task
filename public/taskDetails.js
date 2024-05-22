@@ -275,11 +275,18 @@ function updateTask() {
     const taskArea = document.getElementById('areaSelectionEdit').value;
     const areaDetails = document.getElementById('roomSelectionEdit').value;
     const assignedTo = document.getElementById('assignedToEdit').value;
+    const unassigned = !assignedTo;
+
+    let stageTemp = 'assignedUnacceptedTasksContainer';
+    if (unassigned)
+        {
+            stageTemp = 'unassignedTasksContainer';
+        }
 
     fetch(`/tasks/${taskId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ task_name: taskName, area: taskArea, area_details: areaDetails, assigned_to: assignedTo })
+        body: JSON.stringify({ task_name: taskName, area: taskArea, area_details: areaDetails, assigned_to: assignedTo, stage: stageTemp })
     })
     .then(response => {
         if (!response.ok) {
