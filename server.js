@@ -179,7 +179,7 @@ app.put('/tasks/:taskId', async (req, res) => {
       // Update the task
       const updateQuery = `
           UPDATE tasks 
-          SET task_name = $1, area = $2, area_details = $3, assigned_to = $4, stage = $5, 
+          SET task_name = $1, area = $2, area_details = $3, assigned_to = $4,assigned_at = NOW(), stage = $5, 
           accepted = false, rejected = false, accepted_at = NULL, rejected_at = NULL
           WHERE id = $6
           RETURNING *
