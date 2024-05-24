@@ -359,10 +359,27 @@ app.put('/tasks/:taskId/verify', async (req, res) => {
   }
 });
 
+// Endpoint to mark a task as verification failed
+app.put('/tasks/:taskId/verifyFailed', async (req, res) => {
+  const taskId = req.params.taskId;
+  const { verified_by } = req.body;
+  try {
+      const client = await pool.connect();
+      const query = 'UPDATE tasks SET verified_failed = TRUE, verified_failed_at = NOW(), stage = $1 WHERE id = $2';
+      await client.query(query, ['verifiedFailedTasksContainer', taskId]);
+      client.release();
+      res.json({ success: true });
+  } catch (error) {
+      console.error('Error marking task as verification failed:', error);
+      res.status(500).json({ success: false, error: 'Internal server error' });
+  }
+});
+
+
 // Define endpoint to fetch rejected tasks
 app.get('/fetchTasks/rejected', async (req, res) => {
   try {
-    const query = 'SELECT * FROM tasks WHERE rejected = true';
+    const query = `SELECT * FROM tasks WHERE rejected = true and stage = 'rejectedTasksContainer';`;
     const result = await pool.query(query);
     const rejectedTasks = result.rows;
     console.log(rejectedTasks);
@@ -373,10 +390,11 @@ app.get('/fetchTasks/rejected', async (req, res) => {
   }
 });
 
+
 // Define endpoint to fetch accepted tasks
 app.get('/fetchTasks/accepted', async (req, res) => {
   try {
-    const query = 'SELECT * FROM tasks WHERE accepted = true';
+    const query = `SELECT * FROM tasks WHERE accepted = true and (stage = 'acceptedTasksContainer');`;
     const result = await pool.query(query);
     const acceptedTasks = result.rows;
     res.json(acceptedTasks);
@@ -389,7 +407,7 @@ app.get('/fetchTasks/accepted', async (req, res) => {
 // Define endpoint to fetch completed tasks
 app.get('/fetchTasks/completed', async (req, res) => {
   try {
-    const query = 'SELECT * FROM tasks WHERE completed = true';
+    const query = `SELECT * FROM tasks WHERE completed = true and (stage = 'completedTasksContainer');`;
     const result = await pool.query(query);
     const completedTasks = result.rows;
     res.json(completedTasks);
@@ -402,7 +420,7 @@ app.get('/fetchTasks/completed', async (req, res) => {
 // Define endpoint to fetch verified tasks
 app.get('/fetchTasks/verified', async (req, res) => {
   try {
-    const query = 'SELECT * FROM tasks WHERE verified_by IS NOT NULL';
+    const query = `SELECT * FROM tasks WHERE verified = true and stage = 'verifiedTasksContainer';`;
     const result = await pool.query(query);
     const verifiedTasks = result.rows;
     res.json(verifiedTasks);
@@ -445,6 +463,19 @@ app.get('/fetchTasks/assignedUnaccepted', async (req, res) => {
   }
 });
 
+// Define endpoint to fetch completed tasks
+app.get('/fetchTasks/verifiedFailed', async (req, res) => {
+  try {
+    const query = `SELECT * FROM tasks WHERE verified_failed = true and stage = 'verifiedFailedTasksContainer';`;
+    const result = await pool.query(query);
+    const completedTasks = result.rows;
+    res.json(completedTasks);
+  } catch (error) {
+    console.error('Error fetching Verified Failed tasks:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 let tasks = [];
 
 // Function to fetch tasks from the database and populate the tasks array
@@ -467,7 +498,7 @@ app.get('/rooms/:roomId', async (req, res) => {
   if (isNaN(roomId)) {
       return res.status(400).json({ error: 'Invalid room ID' });
   }
-
+  console.log(roomId);
   try {
       const client = await pool.connect();
       const query = 'SELECT name FROM rooms WHERE id = $1;';

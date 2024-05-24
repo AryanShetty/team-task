@@ -1,3 +1,22 @@
+window.onload = async () => {
+    if (window.location.pathname === '/taskDisplay') {
+        await initializeTaskDisplay();
+    }
+    window.addEventListener('pageshow', (event) => {
+        if (event.persisted || (window.performance && window.performance.navigation.type === 2)) {
+            // The page was loaded from cache
+            initializeTaskDisplay();
+        }
+    });
+};
+
+// Call the functions to display tasks when the page loads
+async function initializeTaskDisplay() {
+    await fetchUserDetails();
+    populateAssignedToDropdown(); // Call the function to populate the assignedTo dropdown
+    fetchAndDisplayTasks(); // Call the function to fetch and display tasks
+}
+
 let userInfo = {
     id: null,
     username: null,
@@ -112,15 +131,6 @@ function login() {
     });
 }
 
-
-
-// Call the functions to display tasks when the page loads
-async function initializeTaskDisplay() {
-    await fetchUserDetails();
-    populateAssignedToDropdown(); // Call the function to populate the assignedTo dropdown
-    fetchAndDisplayTasks(); // Call the function to fetch and display tasks
-}
-
 // Function to fetch and display tasks
 async function fetchAndDisplayTasks() {
     try {
@@ -130,6 +140,7 @@ async function fetchAndDisplayTasks() {
         await fetchAndDisplaySectionTasks('/fetchTasks/verified', 'verifiedTasksContainer');
         await fetchAndDisplaySectionTasks('/fetchTasks/unassigned', 'unassignedTasksContainer');
         await fetchAndDisplaySectionTasks('/fetchTasks/assignedUnaccepted', 'assignedUnacceptedTasksContainer');
+        await fetchAndDisplaySectionTasks('/fetchTasks/verifiedFailed', 'verifiedFailedTasksContainer');
     } catch (error) {
         console.error('Error fetching and displaying tasks:', error);
     }
@@ -181,17 +192,7 @@ function compareIds(id1, id2) {
     return id1.toString().trim() === id2.toString().trim();
 }
 
-window.onload = async () => {
-    if (window.location.pathname === '/taskDisplay') {
-        await initializeTaskDisplay();
-    }
-    window.addEventListener('pageshow', (event) => {
-        if (event.persisted || (window.performance && window.performance.navigation.type === 2)) {
-            // The page was loaded from cache
-            initializeTaskDisplay();
-        }
-    });
-};
+
 
 // Function to create accept button
 function createAcceptButton(taskId) {
@@ -296,11 +297,10 @@ async function populateRoomDropdown() {
     defaultOption.textContent = 'Select';
     roomSelection.appendChild(defaultOption);
 
-    if (selectedArea === 'a_block' || selectedArea === 'b_block') {
+    if (selectedArea) {
         try {
-            // Fetch rooms for A Block or B Block using area IDs
-            const areaId = selectedArea === 'a_block' ? 1 : 2; // A Block's ID is 1, B Block's ID is 2
-            const response = await fetch(`/areas/${areaId}/rooms`);
+            // Fetch rooms for the selected area using the area ID
+            const response = await fetch(`/areas/${selectedArea}/rooms`);
             const rooms = await response.json();
 
             rooms.forEach(room => {
@@ -313,24 +313,15 @@ async function populateRoomDropdown() {
             console.error('Error fetching rooms:', error);
             alert('Failed to fetch rooms. Please try again later.');
         }
-    } else if (selectedArea === 'other') {
-        // Show options for A Block, B Block, and External Areas
-        const options = ['A Block', 'B Block', 'External Areas'];
-        options.forEach(optionText => {
-            const option = document.createElement('option');
-            option.value = optionText.toLowerCase().replace(' ', '_');
-            option.textContent = optionText;
-            roomSelection.appendChild(option);
-        });
     } else {
         // If none of the above, clear room selection
-        roomSelection.innerHTML = '';
         const defaultOption = document.createElement('option');
         defaultOption.value = '';
         defaultOption.textContent = 'Select an option';
         roomSelection.appendChild(defaultOption);
     }
 }
+
 
 async function populateAssignedToDropdown() {
     const assignedToDropdown = document.getElementById('assignedTo');

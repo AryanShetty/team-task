@@ -25,13 +25,17 @@ function initializeElements() {
         <p><strong>Completed At:</strong> <span id="completedAtDisplay"></span></p>
         <p><strong>Verified By:</strong> <span id="verifiedByDisplay"></span></p>
         <p><strong>Verified At:</strong> <span id="verifiedAtDisplay"></span></p>
+        <p><strong>Verified Failed:</strong> <span id="verifiedFailedDisplay"></span></p>
+        <p><strong>Verified Failed At:</strong> <span id="verifiedFailedAtDisplay"></span></p>
         <p><strong>Task ID:</strong> <span id="taskIdDisplay"></span></p>
         <button id="markCompleteBtn" style="display: none;"></button>
         <button id="verifyBtn" style="display: none;"></button>
+        <button id="failVerificationBtn" style="display: none;"></button>
         <button id="editTaskBtn" onclick="toggleEdit()">Edit Task</button>
         <button id="updateTaskBtn" style="display: none;" onclick="updateTask()">Update Task</button>
     `;
 }
+
 
 async function initializePage() {
     try {
@@ -147,7 +151,7 @@ async function populateUserDropdown(selectedAssignee) {
     }
 }
 
-async function populateRoomDropdown(selectedArea, selectedRoom) {
+async function populateRoomDropdown(selectedArea, selectedRoom = '') {
     const roomSelection = document.getElementById('roomSelectionEdit');
     if (roomSelection) {
         roomSelection.innerHTML = ''; 
@@ -157,19 +161,27 @@ async function populateRoomDropdown(selectedArea, selectedRoom) {
         defaultOption.textContent = 'Select a Room';
         roomSelection.appendChild(defaultOption);
 
-        if (selectedArea === 'a_block' || selectedArea === 'b_block') {
+        if (selectedArea === 'a_block' || selectedArea === 'b_block' || selectedArea === 'other') {
             try {
-                const areaId = selectedArea === 'a_block' ? 1 : 2;
+                let areaId;
+                if (selectedArea === 'a_block') {
+                    areaId = 1;
+                } else if (selectedArea === 'b_block') {
+                    areaId = 2;
+                } else if (selectedArea === 'other') {
+                    areaId = 3;
+                }
+
                 const response = await fetch(`/areas/${areaId}/rooms`);
                 const rooms = await response.json();
-                console.log (`area ID = ${areaId} response is ${rooms}`);
+                console.log(`area ID = ${areaId}, response is ${rooms}`);
                 rooms.forEach(room => {
                     const option = document.createElement('option');
                     option.value = room.id;
                     option.textContent = room.name;
-                    console.log(`Room.id  is ${room.id} selectedRoom is ${selectedRoom}`);
-                    console.log(`Do they equal ${compareIds(room.id,selectedRoom)}`);
-                    if (compareIds(room.id,selectedRoom)) {
+                    console.log(`Room.id is ${room.id}, selectedRoom is ${selectedRoom}`);
+                    console.log(`Do they equal ${compareIds(room.id, selectedRoom)}`);
+                    if (compareIds(room.id, selectedRoom)) {
                         option.selected = true;
                     }
                     roomSelection.appendChild(option);
@@ -178,22 +190,21 @@ async function populateRoomDropdown(selectedArea, selectedRoom) {
                 console.error('Error fetching rooms:', error);
                 alert('Failed to fetch rooms. Please try again later.');
             }
-        } else if (selectedArea === 'other') {
-            const options = ['A Block', 'B Block', 'External Areas'];
-            options.forEach(optionText => {
-                const option = document.createElement('option');
-                option.value = optionText.toLowerCase().replace(' ', '_');
-                option.textContent = optionText;
-                if (option.value === selectedRoom) {
-                    option.selected = true;
-                }
-                roomSelection.appendChild(option);
-            });
+        } else {
+            console.error('Invalid area selected');
         }
     } else {
         console.error('roomSelection element not found');
     }
 }
+
+function compareIds(id1, id2) {
+    if (id1 === null || id2 === null) {
+        return false;
+    }
+    return id1.toString().trim() === id2.toString().trim();
+}
+
 
 function compareIds(id1, id2) {
     if (id1 === null || id2 === null) {
@@ -212,14 +223,35 @@ function populateElements(task) {
     document.getElementById('createdByDisplay').textContent = task.created_by_name;
     document.getElementById('createdAtDisplay').textContent = formatDate(task.created_at);
     document.getElementById('completedAtDisplay').textContent = formatDate(task.completed_at) || 'Not Completed';
-    document.getElementById('verifiedByDisplay').textContent = task.verified_by_name;
-    document.getElementById('verifiedAtDisplay').textContent = formatDate(task.verified_at) || 'Not Verified';
     document.getElementById('taskIdDisplay').textContent = task.id;
-
+  
+    const verifiedByDisplay = document.getElementById('verifiedByDisplay');
+    const verifiedAtDisplay = document.getElementById('verifiedAtDisplay');
+    const verifiedFailedDisplay = document.getElementById('verifiedFailedDisplay');
+    const verifiedFailedAtDisplay = document.getElementById('verifiedFailedAtDisplay');
+  
+    if (task.verified_at) {
+        verifiedByDisplay.textContent = task.verified_by_name;
+        verifiedAtDisplay.textContent = formatDate(task.verified_at) || 'Not Verified';
+        verifiedFailedDisplay.textContent = 'No';
+        verifiedFailedAtDisplay.textContent = 'Not Applicable';
+    } else if (task.verified_failed) {
+        verifiedByDisplay.textContent = 'Not Verified';
+        verifiedAtDisplay.textContent = 'Not Applicable';
+        verifiedFailedDisplay.textContent = 'Yes';
+        verifiedFailedAtDisplay.textContent = formatDate(task.verified_failed_at) || 'Not Failed';
+    } else {
+        verifiedByDisplay.textContent = 'Not Verified';
+        verifiedAtDisplay.textContent = 'Not Verified';
+        verifiedFailedDisplay.textContent = 'No';
+        verifiedFailedAtDisplay.textContent = 'Not Applicable';
+    }
+  
     const markCompleteBtn = document.getElementById('markCompleteBtn');
     const verifyBtn = document.getElementById('verifyBtn');
+    const failVerificationBtn = document.getElementById('failVerificationBtn');
     const editTaskBtn = document.getElementById('editTaskBtn');
-
+  
     if (currentUser.role === 'manager' || task.assigned_to === currentUser.id) {
         if (!task.accepted) {
             markCompleteBtn.textContent = 'Accept Task';
@@ -233,24 +265,33 @@ function populateElements(task) {
             markCompleteBtn.textContent = 'Task Completed';
             markCompleteBtn.style.display = 'none';
         }
-
-        if (task.completed_at && !task.verified_at) {
+  
+        if (task.completed_at && !task.verified_at && !task.verified_failed) {
             verifyBtn.textContent = 'Verify Task';
             verifyBtn.style.display = 'block';
             verifyBtn.onclick = () => markTaskVerified(task.id);
+  
+            failVerificationBtn.textContent = 'Fail Verification';
+            failVerificationBtn.style.display = 'block';
+            failVerificationBtn.onclick = () => markTaskVerificationFailed(task.id);
         } else if (task.verified_at) {
             verifyBtn.textContent = 'Task Verified';
             verifyBtn.style.display = 'none';
+            failVerificationBtn.style.display = 'none';
         } else {
             verifyBtn.textContent = 'Complete Task Before Verifying';
             verifyBtn.style.display = 'none';
+            failVerificationBtn.style.display = 'none';
         }
     }
     // Hide edit button for completed or verified tasks
-    if (task.completed_at || task.verified_at) {
+    if (task.completed_at || task.verified_at || task.verified_failed) {
         editTaskBtn.style.display = 'none';
     }
-}
+  }
+  
+
+
 
 function toggleEdit() {
     const displayElements = document.querySelectorAll('#taskDescriptionDisplay, #areaSelectionDisplay, #roomSelectionDisplay, #assignedToDisplay');
@@ -373,6 +414,25 @@ function markTaskVerified(taskId) {
         })
         .catch(error => {
             console.error('Error marking task as verified:', error);
+        });
+}
+function markTaskVerificationFailed(taskId) {
+    fetch(`/tasks/${taskId}/verifyFailed`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ verified_by: currentUser.id })
+    })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                console.log('Task marked as verification failed successfully');
+                location.reload();
+            } else {
+                console.error('Failed to mark task as verification failed:', data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error marking task as verification failed:', error);
         });
 }
 

@@ -20,9 +20,9 @@
         />
         <select id="areaSelection" onchange="populateRoomDropdown()">
           <option value="">Select an Area</option>
-          <option value="a_block">A Block rooms</option>
-          <option value="b_block">B Block rooms</option>
-          <option value="other">Other Area</option>
+          <option value="1">A Block</option>
+          <option value="2">B Block</option>
+          <option value="3">Other Area</option>
         </select>
         <select id="roomSelection">
           <option value="">Select a Room</option>
@@ -43,6 +43,10 @@
         <div id="rejectedTasksContainer">
           <!-- Rejected tasks will be displayed here -->
         </div>
+      </div>
+      <div>
+        <h2>Tasks that Failed Verification</h2>
+        <div id="verifiedFailedTasksContainer"></div>
       </div>
       <div>
         <h2>Assigned but Unaccepted Tasks</h2>
