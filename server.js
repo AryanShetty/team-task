@@ -349,7 +349,7 @@ app.put('/tasks/:taskId/verify', async (req, res) => {
   const { verified_by, verified_at } = req.body;
   try {
       const client = await pool.connect();
-      const query = 'UPDATE tasks SET verified_by = $1, verified_at = NOW(), stage = $2, verified = true,  WHERE id = $3';
+      const query = 'UPDATE tasks SET verified_by = $1, verified_at = NOW(), stage = $2, verified = TRUE WHERE id = $3';
       await client.query(query, [verified_by,'verifiedTasksContainer', taskId]);
       client.release();
       res.json({ success: true });
