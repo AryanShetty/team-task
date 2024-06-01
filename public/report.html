@@ -1,0 +1,37 @@
+<!-- report.html -->
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Task Report</title>
+    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="report.css" />
+  </head>
+  <body>
+    <div id="reportContainer">
+      <h1>Task Report</h1>
+      <div id="reportForm">
+        <label for="tasksFrom">Tasks From:</label>
+        <input type="date" id="tasksFrom" name="tasksFrom" required />
+
+        <label for="tasksTo">Tasks To:</label>
+        <input type="date" id="tasksTo" name="tasksTo" required />
+
+        <label for="users">Users:</label>
+        <select id="users">
+          <option value="">All Users</option>
+          <!-- User options will be populated dynamically -->
+        </select>
+
+        <button onclick="generateReport()">Generate Report</button>
+      </div>
+      <div id="reportResultsContainer">
+        <div id="reportResults">
+          <!-- Report results will be displayed here -->
+        </div>
+      </div>
+    </div>
+    <script src="report.js"></script>
+  </body>
+</html>

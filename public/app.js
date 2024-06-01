@@ -483,3 +483,10 @@ async function fetchUserDetails() {
     }
 }
 
+// app.js
+
+function redirectToReportPage() {
+    window.location.href = '/report';
+}
+
+

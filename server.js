@@ -610,3 +610,56 @@ const updateTaskStages = async () => {
       console.error('Error updating task stages:', error);
   }
 }
+
+app.get('/report', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'report.html'));
+});
+
+app.post('/generate-report', async (req, res) => {
+  const { tasksFrom, tasksTo, userId } = req.body;
+
+  let query = `
+      SELECT
+          tasks.id,
+          tasks.task_name,
+          tasks.area,
+          tasks.area_details,
+          tasks.created_by,
+          tasks.assigned_to,
+          tasks.created_at,
+          tasks.assigned_at,
+          tasks.completed_at,
+          tasks.verified_by,
+          tasks.verified_at,
+          tasks.accepted,
+          tasks.accepted_at,
+          tasks.rejected,
+          tasks.rejected_at,
+          tasks.completed,
+          tasks.stage,
+          tasks.unassigned,
+          tasks.verified_failed,
+          tasks.verified_failed_at,
+          tasks.verified
+      FROM tasks
+      WHERE tasks.created_at >= $1 AND tasks.created_at < $2::date + INTERVAL '1 day'
+      ORDER BY tasks.id DESC
+  `;
+
+  const params = [tasksFrom, tasksTo];
+
+  if (userId) {
+      query += ' AND tasks.assigned_to = $3';
+      params.push(userId);
+  }
+
+  try {
+      const client = await pool.connect();
+      const result = await client.query(query, params);
+      client.release();
+      res.json({ success: true, tasks: result.rows });
+  } catch (error) {
+      console.error('Error generating report:', error);
+      res.status(500).json({ success: false, error: 'Internal server error' });
+  }
+});
