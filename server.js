@@ -379,7 +379,7 @@ app.put('/tasks/:taskId/verifyFailed', async (req, res) => {
 // Define endpoint to fetch rejected tasks
 app.get('/fetchTasks/rejected', async (req, res) => {
   try {
-    const query = `SELECT * FROM tasks WHERE rejected = true and stage = 'rejectedTasksContainer';`;
+    const query = `SELECT * FROM tasks WHERE rejected = true and stage = 'rejectedTasksContainer' ORDER BY created_at DESC;`;
     const result = await pool.query(query);
     const rejectedTasks = result.rows;
     console.log(rejectedTasks);
@@ -394,7 +394,7 @@ app.get('/fetchTasks/rejected', async (req, res) => {
 // Define endpoint to fetch accepted tasks
 app.get('/fetchTasks/accepted', async (req, res) => {
   try {
-    const query = `SELECT * FROM tasks WHERE accepted = true and (stage = 'acceptedTasksContainer');`;
+    const query = `SELECT * FROM tasks WHERE accepted = true and stage = 'acceptedTasksContainer' ORDER BY accepted_at DESC;`;
     const result = await pool.query(query);
     const acceptedTasks = result.rows;
     res.json(acceptedTasks);
@@ -407,7 +407,7 @@ app.get('/fetchTasks/accepted', async (req, res) => {
 // Define endpoint to fetch completed tasks
 app.get('/fetchTasks/completed', async (req, res) => {
   try {
-    const query = `SELECT * FROM tasks WHERE completed = true and (stage = 'completedTasksContainer');`;
+    const query = `SELECT * FROM tasks WHERE completed = true and (stage = 'completedTasksContainer') ORDER BY completed_at;`;
     const result = await pool.query(query);
     const completedTasks = result.rows;
     res.json(completedTasks);
@@ -420,7 +420,7 @@ app.get('/fetchTasks/completed', async (req, res) => {
 // Define endpoint to fetch verified tasks
 app.get('/fetchTasks/verified', async (req, res) => {
   try {
-    const query = `SELECT * FROM tasks WHERE verified = true and stage = 'verifiedTasksContainer';`;
+    const query = `SELECT * FROM tasks WHERE verified = true and stage = 'verifiedTasksContainer' ORDER BY verified_at DESC;`;
     const result = await pool.query(query);
     const verifiedTasks = result.rows;
     res.json(verifiedTasks);
@@ -433,7 +433,7 @@ app.get('/fetchTasks/verified', async (req, res) => {
 // Define endpoint to fetch unassigned tasks
 app.get('/fetchTasks/unassigned', async (req, res) => {
   try {
-      const query = 'SELECT * FROM tasks WHERE unassigned = true';
+      const query = 'SELECT * FROM tasks WHERE unassigned = true ORDER BY created_at DESC;';
       const result = await pool.query(query);
       const unassignedTasks = result.rows;
       res.json(unassignedTasks);
@@ -453,6 +453,7 @@ app.get('/fetchTasks/assignedUnaccepted', async (req, res) => {
         AND (rejected IS NULL OR rejected = false)
         AND (completed IS NULL OR completed = false)
         AND (verified_by IS NULL)
+        ORDER BY created_at DESC;
     `;
     const result = await pool.query(query);
     const assignedUnacceptedTasks = result.rows;
@@ -466,7 +467,7 @@ app.get('/fetchTasks/assignedUnaccepted', async (req, res) => {
 // Define endpoint to fetch completed tasks
 app.get('/fetchTasks/verifiedFailed', async (req, res) => {
   try {
-    const query = `SELECT * FROM tasks WHERE verified_failed = true and stage = 'verifiedFailedTasksContainer';`;
+    const query = `SELECT * FROM tasks WHERE verified_failed = true and stage = 'verifiedFailedTasksContainer' ORDER BY verified_failed_at DESC;`;
     const result = await pool.query(query);
     const completedTasks = result.rows;
     res.json(completedTasks);
