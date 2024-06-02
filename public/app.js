@@ -104,6 +104,13 @@ function login() {
     const selectedArea = areaSelection.value;
     const selectedRoom = roomSelection.value;
 
+
+    // Check if task name is empty
+    if (!task_name.trim()) {
+        alert('Please enter a task name.');
+        return; // Exit the function if task name is empty
+    }
+
     fetch('/tasks', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
