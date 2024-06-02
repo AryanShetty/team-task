@@ -419,8 +419,13 @@ app.get('/fetchTasks/completed', async (req, res) => {
 
 // Define endpoint to fetch verified tasks
 app.get('/fetchTasks/verified', async (req, res) => {
+  const todayDate = new Date().toISOString().split('T')[0]; // Get today's date in YYYY-MM-DD format
+
   try {
-    const query = `SELECT * FROM tasks WHERE verified = true and stage = 'verifiedTasksContainer' ORDER BY verified_at DESC;`;
+    const query = `SELECT * FROM tasks  WHERE tasks.verified = true AND tasks.stage = 'verifiedTasksContainer'
+                  AND tasks.verified_at::date = $1::date
+                  ORDER BY tasks.verified_at DESC;`;
+    const params = [todayDate];
     const result = await pool.query(query);
     const verifiedTasks = result.rows;
     res.json(verifiedTasks);
