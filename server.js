@@ -422,18 +422,25 @@ app.get('/fetchTasks/verified', async (req, res) => {
   const todayDate = new Date().toISOString().split('T')[0]; // Get today's date in YYYY-MM-DD format
 
   try {
-    const query = `SELECT * FROM tasks  WHERE tasks.verified = true AND tasks.stage = 'verifiedTasksContainer'
-                  AND tasks.verified_at::date = $1::date
-                  ORDER BY tasks.verified_at DESC;`;
+    const query = `
+      SELECT * FROM tasks 
+      WHERE tasks.verified = true 
+      AND tasks.stage = 'verifiedTasksContainer'
+      AND tasks.verified_at::date = $1::date
+      ORDER BY tasks.verified_at DESC;
+    `;
     const params = [todayDate];
-    const result = await pool.query(query);
+    console.log('Executing Query:', query, 'with params:', params); // Log the query and parameters for debugging
+    const result = await pool.query(query, params);
     const verifiedTasks = result.rows;
+    console.log('Query Result:', verifiedTasks); // Log the query result
     res.json(verifiedTasks);
   } catch (error) {
     console.error('Error fetching verified tasks:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
+
 
 // Define endpoint to fetch unassigned tasks
 app.get('/fetchTasks/unassigned', async (req, res) => {
