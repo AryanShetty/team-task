@@ -74,12 +74,12 @@ app.post('/tasks', async (req, res) => {
   const created_by = req.session.user.user_id;
   let assigned_to = null;
 
-  if (req.session.user.role === 'manager') {
+  if (req.session.user.role === 'manager' || req.session.user.role === 'owner') {
       assigned_to = req.body.assigned_to; // Assign tasks if the user is a manager
   }
 
   // If the user is not a manager, tasks will always be unassigned
-  if (req.session.user.role !== 'manager') {
+  if (req.session.user.role !== 'manager' || req.session.user.role === 'owner') {
       assigned_to = null;
   }
 
@@ -114,7 +114,7 @@ app.get('/tasks', async (req, res) => {
   }
 
   const userId = req.session.user.user_id;
-  const isManager = req.session.user.role === 'manager';
+  const isManager = req.session.user.role === 'manager' || req.session.user.role === 'owner';
   console.log(`User ID: ${userId}, Is Manager: ${isManager}`);
 
   try {
@@ -139,6 +139,31 @@ app.get('/tasks', async (req, res) => {
   }
 });
 
+// Define endpoint to delete tasks
+app.delete('/tasks/:taskId', async (req, res) => {
+  if (!req.session.user) {
+    return res.status(401).json({ success: false, error: 'User not authenticated' });
+  }
+
+  const userId = req.session.user.user_id;
+  const userRole = req.session.user.role;
+  const taskId = req.params.taskId;
+
+  if (userRole !== 'owner') {
+    return res.status(403).json({ success: false, error: 'User not authorized to delete tasks' });
+  }
+
+  try {
+    const client = await pool.connect();
+    const query = 'DELETE FROM tasks WHERE id = $1';
+    await client.query(query, [taskId]);
+    client.release();
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error deleting task:', error);
+    res.status(500).json({ success: false, error: 'Internal server error' });
+  }
+});
 
 app.get('/tasks/:taskId', async (req, res) => {
   const taskId = req.params.taskId;

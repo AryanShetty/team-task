@@ -33,6 +33,7 @@ function initializeElements() {
         <button id="failVerificationBtn" style="display: none;"></button>
         <button id="editTaskBtn" onclick="toggleEdit()">Edit Task</button>
         <button id="updateTaskBtn" style="display: none;" onclick="updateTask()">Update Task</button>
+        <button id="deleteTaskBtn" style="display: none;" onclick="deleteTask()">Delete Task</button>
     `;
 }
 
@@ -251,8 +252,13 @@ function populateElements(task) {
     const verifyBtn = document.getElementById('verifyBtn');
     const failVerificationBtn = document.getElementById('failVerificationBtn');
     const editTaskBtn = document.getElementById('editTaskBtn');
+    const deleteTaskBtn = document.getElementById('deleteTaskBtn');
+
+    if (currentUser.role === 'owner') {
+        deleteTaskBtn.style.display = 'block';
+    }
   
-    if (currentUser.role === 'manager' || task.assigned_to === currentUser.id) {
+    if (currentUser.role === 'manager' || task.assigned_to === currentUser.id || req.session.user.role === 'owner') {
         if (!task.accepted) {
             markCompleteBtn.textContent = 'Accept Task';
             markCompleteBtn.style.display = 'block';
@@ -290,7 +296,23 @@ function populateElements(task) {
     }
   }
   
-
+  async function deleteTask() {
+    const taskId = getTaskIdFromURL();
+    if (confirm('Are you sure you want to delete this task?')) {
+      try {
+        const response = await fetch(`/tasks/${taskId}`, { method: 'DELETE' });
+        if (response.ok) {
+          alert('Task deleted successfully.');
+          window.location.href = '/taskDisplay';
+        } else {
+          alert('Failed to delete task. Please try again later.');
+        }
+      } catch (error) {
+        console.error('Error deleting task:', error);
+        alert('Failed to delete task. Please try again later.');
+      }
+    }
+  }
 
 
 function toggleEdit() {

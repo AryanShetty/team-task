@@ -170,9 +170,9 @@ async function fetchAndDisplaySectionTasks(endpoint, containerId) {
 
        // Filter tasks based on user role, assignment, and stage
       const filteredTasks = tasks.filter(task => {
-        const isVisible = (userInfo.role === 'manager' || compareIds(userInfo.id, task.assigned_to)) && task.stage === containerId;
+        const isVisible = (userInfo.role === 'manager' || compareIds(userInfo.id, task.assigned_to) || userInfo.role === 'owner') && task.stage === containerId;
         console.log(`Task ID: ${task.id}, Assigned To: ${task.assigned_to}, Stage: ${task.stage}, Is Visible: ${isVisible}`);
-        console.log(`User Role is ${userInfo.role}, task is assigned to ${task.assigned_to}, user role is manager? ${userInfo.role === 'manager'}, task is assigned? ${compareIds(userInfo.id, task.assigned_to)}, task stage is ${task.stage}`);
+        console.log(`User Role is ${userInfo.role}, task is assigned to ${task.assigned_to}, user role is manager? ${userInfo.role === 'manager' || userInfo.role === 'owner'}, task is assigned? ${compareIds(userInfo.id, task.assigned_to)}, task stage is ${task.stage}`);
         return isVisible;
     });
     console.log(filteredTasks);
