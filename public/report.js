@@ -1,5 +1,3 @@
-// report.js
-
 window.onload = async () => {
   await populateUsersDropdown();
 };
@@ -25,6 +23,7 @@ async function generateReport() {
   const tasksFrom = document.getElementById('tasksFrom').value;
   const tasksTo = document.getElementById('tasksTo').value;
   const userId = document.getElementById('users').value;
+  const stage = document.getElementById('stageSelection').value;
 
   if (!tasksFrom || !tasksTo) {
       alert('Please provide both Tasks From and Tasks To dates.');
@@ -35,7 +34,7 @@ async function generateReport() {
       const response = await fetch('/generate-report', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ tasksFrom, tasksTo, userId })
+          body: JSON.stringify({ tasksFrom, tasksTo, userId, stage })
       });
       const data = await response.json();
       if (data.success) {
@@ -94,6 +93,7 @@ async function formatTask(task) {
 }
 
 async function fetchRoomName(roomId) {
+  if (!roomId) return 'N/A';
   try {
       const response = await fetch(`/rooms/${roomId}`);
       const room = await response.json();

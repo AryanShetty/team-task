@@ -24,6 +24,22 @@
           <!-- User options will be populated dynamically -->
         </select>
 
+        <label for="stageSelection">Stage:</label>
+        <select id="stageSelection">
+          <option value="">All Stages</option>
+          <option value="unassignedTasksContainer">Unassigned</option>
+          <option value="assignedUnacceptedTasksContainer">
+            Assigned but Unaccepted
+          </option>
+          <option value="acceptedTasksContainer">Accepted</option>
+          <option value="completedTasksContainer">Completed</option>
+          <option value="verifiedTasksContainer">Verified</option>
+          <option value="verifiedFailedTasksContainer">
+            Failed Verification
+          </option>
+          <option value="rejectedTasksContainer">Rejected</option>
+        </select>
+
         <button onclick="generateReport()">Generate Report</button>
       </div>
       <div id="reportResultsContainer">

@@ -653,8 +653,7 @@ app.get('/report', (req, res) => {
 });
 
 app.post('/generate-report', async (req, res) => {
-  const { tasksFrom, tasksTo, userId } = req.body;
-
+  const { tasksFrom, tasksTo, userId, stage } = req.body;
   let query = `
       SELECT
           tasks.id,
@@ -680,21 +679,26 @@ app.post('/generate-report', async (req, res) => {
           tasks.verified
       FROM tasks
       WHERE tasks.created_at >= $1 AND tasks.created_at < $2::date + INTERVAL '1 day'
-      ORDER BY tasks.id DESC
   `;
 
   const params = [tasksFrom, tasksTo];
 
   if (userId) {
-      query += ' AND tasks.assigned_to = $3';
+      query += ` AND tasks.assigned_to = $3`;
       params.push(userId);
   }
 
+  if (stage) {
+      query += ` AND tasks.stage = $${params.length + 1}`;
+      params.push(stage);
+  }
+
+  query += ` ORDER BY tasks.created_at DESC`;
+
   try {
-      const client = await pool.connect();
-      const result = await client.query(query, params);
-      client.release();
-      res.json({ success: true, tasks: result.rows });
+      const result = await pool.query(query, params);
+      const tasks = result.rows;
+      res.json({ success: true, tasks });
   } catch (error) {
       console.error('Error generating report:', error);
       res.status(500).json({ success: false, error: 'Internal server error' });
