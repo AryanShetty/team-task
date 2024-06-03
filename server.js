@@ -67,41 +67,36 @@ app.post('/login', async (req, res) => {
 
 app.post('/tasks', async (req, res) => {
   if (!req.session.user) {
-      return res.json({ success: false, error: 'User not authenticated' });
+    return res.json({ success: false, error: 'User not authenticated' });
   }
 
-  const { task_name, areaSelection, roomSelection } = req.body;
+  const { task_name, areaSelection, roomSelection, assigned_to } = req.body;
   const created_by = req.session.user.user_id;
-  let assigned_to = null;
+  let assignedUser = null;
 
   if (req.session.user.role === 'manager' || req.session.user.role === 'owner') {
-      assigned_to = req.body.assigned_to; // Assign tasks if the user is a manager
+    assignedUser = assigned_to; // Assign tasks if the user is a manager or owner
   }
 
-  // If the user is not a manager, tasks will always be unassigned
-  if (req.session.user.role !== 'manager' || req.session.user.role === 'owner') {
-      assigned_to = null;
-  }
-
-  let unassigned = !assigned_to;
-  let assigned_at = unassigned ? null : new Date(); // Set the current timestamp if assigned_to is not null
+  let unassigned = !assignedUser;
+  let assigned_at = unassigned ? null : new Date(); // Set the current timestamp if assignedUser is not null
 
   try {
-      const client = await pool.connect();
-      const query = `
-          INSERT INTO tasks (task_name, created_by, assigned_to, area, area_details, created_at, assigned_at, completed_at, verified_by, verified_at, stage, unassigned)
-          VALUES ($1, $2, $3, $4, $5, DEFAULT, $6, DEFAULT, DEFAULT, DEFAULT, $7, $8)
-          RETURNING id, created_at, assigned_at, completed_at, verified_by, verified_at, stage, unassigned
-      `;
-      const stage = unassigned ? 'unassignedTasksContainer' : 'assignedUnacceptedTasksContainer';
-      const result = await client.query(query, [task_name, created_by, assigned_to, areaSelection, roomSelection, assigned_at, stage, unassigned]);
-      client.release();
-      const task = result.rows[0];
+    const client = await pool.connect();
+    const query = `
+      INSERT INTO tasks (task_name, created_by, assigned_to, area, area_details, created_at, assigned_at, completed_at, verified_by, verified_at, stage, unassigned)
+      VALUES ($1, $2, $3, $4, $5, DEFAULT, $6, DEFAULT, DEFAULT, DEFAULT, $7, $8)
+      RETURNING id, created_at, assigned_at, completed_at, verified_by, verified_at, stage, unassigned
+    `;
+    const stage = unassigned ? 'unassignedTasksContainer' : 'assignedUnacceptedTasksContainer';
+    const result = await client.query(query, [task_name, created_by, assignedUser, areaSelection, roomSelection, assigned_at, stage, unassigned]);
+    client.release();
+    const task = result.rows[0];
 
-      res.json({ success: true, task });
+    res.json({ success: true, task });
   } catch (error) {
-      console.error('Error creating task:', error);
-      res.status(500).json({ success: false, error: 'Internal server error' });
+    console.error('Error creating task:', error);
+    res.status(500).json({ success: false, error: 'Internal server error' });
   }
 });
 
@@ -404,7 +399,13 @@ app.put('/tasks/:taskId/verifyFailed', async (req, res) => {
 // Define endpoint to fetch rejected tasks
 app.get('/fetchTasks/rejected', async (req, res) => {
   try {
-    const query = `SELECT * FROM tasks WHERE rejected = true and stage = 'rejectedTasksContainer' ORDER BY created_at DESC;`;
+    const query = `
+      SELECT * FROM tasks 
+      WHERE rejected = true 
+      AND stage = 'rejectedTasksContainer' 
+      AND rejected_at >= NOW() - INTERVAL '1 day'
+      ORDER BY rejected_at DESC;
+    `;
     const result = await pool.query(query);
     const rejectedTasks = result.rows;
     console.log(rejectedTasks);
