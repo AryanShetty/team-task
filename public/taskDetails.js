@@ -254,16 +254,20 @@ function populateElements(task) {
     const editTaskBtn = document.getElementById('editTaskBtn');
     const deleteTaskBtn = document.getElementById('deleteTaskBtn');
 
+    console.log(`User is authorized? MvO ${currentUser.role === 'manager' || currentUser.role === 'owner'} user is assinged? ${currentUser.role === ('manager' || 'owner') || task.assigned_to === currentUser.id}`);
+    console.log(`task accepted? ${task.accepted} task not complete? ${task.completed} task verifyable? ${task.completed_at && !task.verified_at && !task.verified_failed}`);
+    console.log(`Current user role is? ${currentUser.role}`);
+
     if (currentUser.role === 'owner') {
         deleteTaskBtn.style.display = 'block';
     }
   
-    if (currentUser.role === 'manager' || task.assigned_to === currentUser.id || req.session.user.role === 'owner') {
+    if (currentUser.role === 'manager' || currentUser.role === 'owner' || task.assigned_to === currentUser.id) {
         if (!task.accepted) {
             markCompleteBtn.textContent = 'Accept Task';
             markCompleteBtn.style.display = 'block';
             markCompleteBtn.onclick = () => acceptTask(task.id);
-        } else if (!task.completed_at) {
+        } else if (!task.completed) {
             markCompleteBtn.textContent = 'Complete Task';
             markCompleteBtn.style.display = 'block';
             markCompleteBtn.onclick = () => markTaskComplete(task.id);
